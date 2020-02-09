@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # oGasai Scripts for WoW Classic
 
 Bot made by DarkLinux @ OwnedCore
@@ -17,3 +18,7 @@ Vanilla
 HOST
 
 192.158.228.97 tumadre.000webhostapp.com
+=======
+# oGasaiVanilla
+oGassai for Vanilla Modified
+>>>>>>> 698eac2fa9e56d067cc50fad35ec0d26021ecf09
