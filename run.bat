@@ -1,0 +1,1 @@
+C:\Users\SigWar\Desktop\oGasai\oGasaiLoader.exe

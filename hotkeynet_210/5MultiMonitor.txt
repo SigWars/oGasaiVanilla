@@ -1,0 +1,458 @@
+//______________________________________________________________________________________________________________________________________
+// Rift 1920x1080 Dual Monitor 5 Box Configuration File
+//
+// Submitted By: Dracconus - For use on Dual-boxing.com
+//
+// Contact me at dracconusg@gmail.com if you have any questions
+//
+//-----------------------------------------------------------
+
+
+//-----------------------------------------------------------
+// This layout is for use with Dual & Triple Monitor Setups allowing larger windows
+// Part of the need for this is the fact that Rift's Engine HATES secondary Monitors
+// and resizing a rift window on a secondary monitor will cause it to go to about 100px
+// wide, and result in a "horizontal pixel lock" where you can't resize horizontally.
+//-----------------------------------------------------------
+//
+//      READ THIS BEFORE ATTEMPTING TO USE THIS SCRIPT!
+//
+// You HAVE to replace the EMAILACCOUNT and PASSWORD fields with your actual information for your accounts before this will log you in properly.
+// They're located in the section labelled:  "GAME LAUNCH FUNCTION"  
+// Also remember that the script is made to take advantage of the first account using an authenticator, and requiring you to finish starting the
+// client after it inputs the email account, and password.  Information can be found below on how to remove this functionality from the script.
+//
+//-----------------------------------------------------------
+
+
+
+
+//-----------------------------------------------------------
+//
+//                HOTKEY INFORMATION
+//
+//-----------------------------------------------------------
+// ALL HOTKEYS RELY ON SCROLL LOCK TO BE TURNED ON!!!
+//-----------------------------------------------------------
+//
+//_______________________________________________________________________________________________________________
+//                          |                                                                                    |
+//    HOTKEY COMBINATION    |     HOTKEY FUNCTION                                                                |
+//__________________________|____________________________________________________________________________________|
+//    SHIFT+CTRL+ALT+R      | Launches Clients 1-5: Refer to "LAUNCH" section below for important information    |
+//--------------------------|------------------------------------------------------------------------------------|
+//    CTRL+R                | Renames Rift Windows to Rift1, Rift2, Rift3, Rift4, Rift5                          |
+//--------------------------|------------------------------------------------------------------------------------|
+//    CTRL+P                | Renames Rift1, Rift2, Rift3, Rift4, Rift5 BACk to Rift                             |
+//--------------------------|------------------------------------------------------------------------------------|
+//    Shift+R               | Resize/Place Windows: Refer to "LAYOUT" section below                              |
+//--------------------------|------------------------------------------------------------------------------------|
+//    Ctrl+Shift+ 1-5       | Cycle Rift Windows: Refer to "CYCLE" Section below                                 |
+//__________________________|____________________________________________________________________________________|
+
+
+
+
+//-----------------------------------------------------------
+//
+//         FUNCTION GUIDES & IMPORTANT INFORMATION
+//
+//
+//                LAYOUT INFORMATION
+//
+// Layout is Multi Screen Concept similar to diagram below:
+// *NOTE* The main screen is NOT 1920x1080 in order to give you a little room under the window for taskbar, etc.
+// ___________________________________________________
+// |       |       |                |                |
+// | Rift2 | Rift3 |                |                |
+// |       |       |                |       NO       |
+// |-------|-------|     Rift1      |      Rift      |
+// |       |       |                |     Windows    |
+// | Rift4 | Rift5 |                |                |
+// |_______|_______|________________|________________|
+//   Left Monitor    Center Monitor   Right Monitor
+//                            
+//-----------------------------------------------------------
+
+
+
+
+//-----------------------------------------------------------
+//
+//                CYCLE INFORMATION    
+//
+// The Window Cycle Function is something that I felt necessary to add as the game itself leaves you needing to
+// switch back and forth at times to equip items/choose quest rewards, etc.  It allows you to quick swap the
+// location of any given window number with your main rift window and vice a versa.
+//
+// So if I pressed CTRL+SHIFT+2 then my screens would look like the diagram below:
+// __________________________________
+// |       |       |                |
+// | Rift1 | Rift3 |                |
+// |       |       |                |
+// |-------|-------|     Rift2      |
+// |       |       |                |
+// | Rift4 | Rift5 |                |
+// |_______|_______|________________|
+// This function switches the main window with the corresponding number you selected
+//-----------------------------------------------------------
+
+
+
+
+//-----------------------------------------------------------
+//
+//                LAUNCH INFORMATION
+//
+// The auto-launch function built into this is one that I spent a lot of time testing to make sure that it'd be
+// something viable for most audiences.  Below is a breakdown.
+//
+// The first launch will pause for 120000 milliseconds (2 minutes) and wait for a window named "RIFT" to appear
+// before it continues to launch the second window.  The reason for this is because I, myself use an authenticator
+// on my main account as it's where my patron status and a LOT of invested money reside.
+// It will put in the email, and password you specify then wait for you to put in the authenticator code, and launch the first game.
+// At this point it will begin then inputting the rest of the information for your "sub-accounts" and launching them automatically.
+//
+//          WHAT IF I DON'T USE AN AUTHENTICATOR??
+//
+// If you don't use an authenticator (shame on you) simply perform the following steps:
+// In the function below titled "OPEN MAIN WINDOW" and find this:
+//
+// <wait 10>
+// <waitforwin "RIFT" 120000>
+//
+// Between the wait, and waitforwin you need to add the following:
+//
+//        <key enter>
+//      <wait 4500>
+//   <clickmouse lbutton screen 1061 761>
+//
+// So it SHOULD look like this:
+//
+//          <wait 10>
+//         <key enter>
+//        <wait 4500>
+//     <clickmouse lbutton screen 1061 761>
+//         <waitforwin "RIFT" 120000>
+//______________________________________________________________________________________________________________________________________
+
+
+//-----------------------------------------------------------            
+//
+//                GAME LAUNCH FUNCTION
+//
+//-----------------------------------------------------------
+
+
+//-----------------------------------------------------------
+// OPEN MAIN WINDOW
+//-----------------------------------------------------------
+<hotkey ScrollLockOn shift ctrl alt r>
+ <sendpc local>
+ <open "C:\External\Games\Rift\riftpatchlive.exe">
+   <waitforwin "RIFT - Patcher" 10000> 
+     <targetwin "RIFT - Patcher">
+       <wait 2500>
+     <clickmouse lbutton screen 1057 518>
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <text EMAILACCOUNT>
+         <wait 20>       
+     <clickmouse lbutton screen 1061 584>
+         <wait 10>  
+     <text PASSWORD>
+         <wait 10> 
+         <waitforwin "RIFT" 120000>
+                  <RenameWin "RIFT" RIFT1>
+              <wait 5000>
+//-----------------------------------------------------------
+// OPEN SECOND WINDOW
+//-----------------------------------------------------------
+ <sendpc local>
+ <open "C:\External\Games\Rift\riftpatchlive.exe">
+   <waitforwin "RIFT - Patcher" 10000> 
+     <targetwin "RIFT - Patcher">
+       <wait 2500>
+     <clickmouse lbutton screen 1057 518>
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <text EMAILACCOUNT>
+         <wait 20>       
+     <clickmouse lbutton screen 1061 584>
+         <wait 10>  
+     <text PASSWORD>
+         <wait 10> 
+         <key enter>
+        <wait 4500>
+     <clickmouse lbutton screen 1061 761>
+         <waitforwin "RIFT" 120000>
+                  <RenameWin "RIFT" RIFT2>
+              <wait 5000>
+//-----------------------------------------------------------
+// OPEN THIRD WINDOW
+//-----------------------------------------------------------
+ <sendpc local>
+ <open "C:\External\Games\Rift\riftpatchlive.exe">
+   <waitforwin "RIFT - Patcher" 10000> 
+     <targetwin "RIFT - Patcher">
+       <wait 2500>
+     <clickmouse lbutton screen 1057 518>
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <text EMAILACCOUNT>
+         <wait 20>       
+     <clickmouse lbutton screen 1061 584>
+         <wait 10>  
+     <text PASSWORD>
+         <wait 10> 
+         <key enter>
+        <wait 4500>
+     <clickmouse lbutton screen 1061 761>
+         <waitforwin "RIFT" 120000>
+                  <RenameWin "RIFT" RIFT3>
+              <wait 5000>
+//-----------------------------------------------------------
+// OPEN FOURTH WINDOW
+//-----------------------------------------------------------
+ <sendpc local>
+ <open "C:\External\Games\Rift\riftpatchlive.exe">
+   <waitforwin "RIFT - Patcher" 10000> 
+     <targetwin "RIFT - Patcher">
+       <wait 2500>
+     <clickmouse lbutton screen 1057 518>
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <text EMAILACCOUNT>
+         <wait 20>       
+     <clickmouse lbutton screen 1061 584>
+         <wait 10>  
+     <text PASSWORD>
+         <wait 10> 
+         <key enter>
+        <wait 4500>
+     <clickmouse lbutton screen 1061 761>
+         <waitforwin "RIFT" 120000>
+                  <RenameWin "RIFT" RIFT4>
+              <wait 5000>
+//-----------------------------------------------------------
+// OPEN FIFTH WINDOW
+//-----------------------------------------------------------
+ <sendpc local>
+ <open "C:\External\Games\Rift\riftpatchlive.exe">
+   <waitforwin "RIFT - Patcher" 10000> 
+     <targetwin "RIFT - Patcher">
+       <wait 2500>
+     <clickmouse lbutton screen 1057 518>
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <clickmouse lbutton screen 1057 518>   
+         <wait 10>
+     <text EMAILACCOUNT>
+         <wait 20>       
+     <clickmouse lbutton screen 1061 584>
+         <wait 10>  
+     <text PASSWORD>
+         <wait 10> 
+         <key enter>
+        <wait 4500>
+     <clickmouse lbutton screen 1061 761>
+         <waitforwin "RIFT" 120000>
+                  <RenameWin "RIFT" RIFT5>
+              <wait 5000>
+
+
+//-----------------------------------------------------------            
+//
+//                RESIZE WINDOW FUNCTION
+//
+//-----------------------------------------------------------
+<hotkey ScrollLockOn Shift R>
+<targetwin rift1>
+     <setwinsize 1920 1000>
+     <setwinpos 0 0>
+<targetwin rift2>
+     <setwinsize 960 500>
+     <setwinpos -1920 0>
+<targetwin rift3>
+     <setwinsize 960 500>
+     <setwinpos -960 0>
+<targetwin rift4>
+     <setwinsize 960 500>
+     <setwinpos -1920 500>
+<targetwin rift5>
+     <setwinsize 960 500>
+     <setwinpos -960 500>
+
+
+//-----------------------------------------------------------            
+//
+//                Initial Rename Function
+//
+//-----------------------------------------------------------
+<Hotkey ScrollLockOn Ctrl R>
+        <RenameWin "RIFT" RIFT1> 
+        <RenameWin "RIFT" RIFT2>
+        <RenameWin "RIFT" RIFT3>
+        <RenameWin "RIFT" RIFT4>
+        <RenameWin "RIFT" RIFT5>
+
+
+//-----------------------------------------------------------            
+//
+//            RENAME AFTER NAMING (BACK TO RIFT)
+//
+//-----------------------------------------------------------
+<Hotkey ScrollLockOn Ctrl P>
+        <RenameWin "rift1" RIFT> 
+        <RenameWin "rift2" RIFT>
+        <RenameWin "rift3" RIFT>
+        <RenameWin "rift4" RIFT>
+        <RenameWin "rift5" RIFT>
+
+
+//-----------------------------------------------------------            
+//
+//                DEFINE LABEL FOR INPUT
+//
+//-----------------------------------------------------------
+<Label r1 Local SendWinsf rift1>
+<Label r2 Local SendWinsf rift2>
+<Label r3 Local SendWinsf rift3>
+<Label r4 Local SendWinsf rift4>
+<Label r5 Local SendWinsf rift5>
+
+
+//-----------------------------------------------------------            
+//
+//   WINDOW CYCLING FUNCTION **WARNING** CONFUSING FOR SOME
+//
+//-----------------------------------------------------------
+<Hotkey ScrollLockOn Ctrl Shift 1>
+<targetwin rift1>
+     <setwinsize 1920 1000>
+     <setwinpos 0 0>
+<targetwin rift2>
+     <setwinsize 960 500>
+     <setwinpos -1920 0>
+<targetwin rift3>
+     <setwinsize 960 500>
+     <setwinpos -960 0>
+<targetwin rift4>
+     <setwinsize 960 500>
+     <setwinpos -1920 500>
+<targetwin rift5>
+     <setwinsize 960 500>
+     <setwinpos -960 500>
+
+
+<Hotkey ScrollLockOn Ctrl Shift 2>
+<targetwin rift2>
+     <setwinsize 1920 1000>
+     <setwinpos 0 0>
+<targetwin rift1>
+     <setwinsize 960 500>
+     <setwinpos -1920 0>
+<targetwin rift3>
+     <setwinsize 960 500>
+     <setwinpos -960 0>
+<targetwin rift4>
+     <setwinsize 960 500>
+     <setwinpos -1920 500>
+<targetwin rift5>
+     <setwinsize 960 500>
+     <setwinpos -960 500>
+
+
+<Hotkey ScrollLockOn Ctrl Shift 3>
+<targetwin rift3>
+     <setwinsize 1920 1000>
+     <setwinpos 0 0>
+<targetwin rift2>
+     <setwinsize 960 500>
+     <setwinpos -1920 0>
+<targetwin rift1>
+     <setwinsize 960 500>
+     <setwinpos -960 0>
+<targetwin rift4>
+     <setwinsize 960 500>
+     <setwinpos -1920 500>
+<targetwin rift5>
+     <setwinsize 960 500>
+     <setwinpos -960 500>
+
+
+<Hotkey ScrollLockOn Ctrl Shift 4>
+<targetwin rift4>
+     <setwinsize 1920 1000>
+     <setwinpos 0 0>
+<targetwin rift2>
+     <setwinsize 960 500>
+     <setwinpos -1920 0>
+<targetwin rift3>
+     <setwinsize 960 500>
+     <setwinpos -960 0>
+<targetwin rift1>
+     <setwinsize 960 500>
+     <setwinpos -1920 500>
+<targetwin rift5>
+     <setwinsize 960 500>
+     <setwinpos -960 500>
+<Hotkey ScrollLockOn Ctrl Shift 5>
+<targetwin rift5>
+     <setwinsize 1920 1000>
+     <setwinpos 0 0>
+<targetwin rift2>
+     <setwinsize 960 500>
+     <setwinpos -1920 0>
+<targetwin rift3>
+     <setwinsize 960 500>
+     <setwinpos -960 0>
+<targetwin rift4>
+     <setwinsize 960 500>
+     <setwinpos -1920 500>
+<targetwin rift1>
+     <setwinsize 960 500>
+     <setwinpos -960 500>
+
+
+//-----------------------------------------------------------            
+//
+//                DEFINE USED HOTKEYS
+//
+//-----------------------------------------------------------
+<Hotkey ScrollLockOn 0-9, Plus, Minus, F1-F11, Oem6>
+<SendLabel r1, r2, r3, r4, r5>
+<Key %Trigger%>
+
+
+//-----------------------------------------------------------            
+//
+//                  MOVEMENT HOTKEYS
+//
+//-----------------------------------------------------------
+<MovementHotkey ScrollLockOn space, x>
+<SendLabel r1, r2, r3, r4, r5>
+<Key %Trigger%>
+
+
+//-----------------------------------------------------------            
+//
+//              MOUSE-CLICK REGISTER FUNCTION
+//
+//-----------------------------------------------------------
+<Hotkey ScrollLockOn OEM3, LButton>
+   <SendLabel r1, r2, r3, r4, r5> 
+      <ClickMouse %TriggerMainKey%>

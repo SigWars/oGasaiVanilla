@@ -1,0 +1,71 @@
+//================================================================
+// SAMPLE SCRIPT FOR TWO WOW'S ON ONE PC
+//
+// Instructions: Copy this entire script (all the blue writing
+// on gray background including comments). Save it in a file.
+// Load it into HotkeyNet.
+//
+// Toggle the scroll lock key to turn hotkeys off and on. (You
+// can change this if you want, just like you can change
+// everything else with HotkeyNet.)
+//
+// Requires HotkeyNet build 147 or higher.
+//
+// For more info, go to www.hotkeynet.com
+//================================================================
+
+//-----------------------------------------------------------
+// PRESS CTRL R TO RENAME WOW'S IF YOU LAUNCH THEM MANUALLY
+//-----------------------------------------------------------
+<Hotkey ScrollLockOn Ctrl R>
+    <SendPC local>
+        <RenameWin "World of Warcraft" WoW1>
+        <RenameWin "World of Warcraft" WoW2>
+
+//-----------------------------------------------------------
+// SUBROUTINE TO LAUNCH AND RENAME A COPY OF WOW.
+//-----------------------------------------------------------
+<Command LaunchAndRename>
+   <SendPC %1%>
+      <Run "E:\LEO\GAMES\World of Warcraft 1.12_2\WoW.exe">
+        <RenameTargetWin %2%>
+
+//-----------------------------------------------------------
+// HOTKEY TO LAUNCH AND RENAME BOTH WOW'S.
+//-----------------------------------------------------------
+<Hotkey ScrollLockOn Alt Ctrl M>
+    <LaunchAndRename Local WoW1>
+    <LaunchAndRename Local WoW2>
+
+//-----------------------------------------------------------
+// DEFINE MAIL LABELS FOR SENDING KEY STROKES
+//-----------------------------------------------------------
+<Label w1 Local SendWinM WoW1>
+<Label w2 Local SendWinM WoW2>
+
+//-----------------------------------------------------------
+// DEFINE HOTKEYS FOR ALL KEY COMBINATIONS THAT WILL GET
+// SENT TO BOTH WOWS. ADD MORE KEY COMBO'S IF YOU WANT.
+//-----------------------------------------------------------
+//<Hotkey ScrollLockOn A-Z, 0-9, Plus, Minus, F1-F12 except W, A, S, D, Q, E>
+//<SendLabel w1, w2>
+//<Key %Trigger%>
+
+//-----------------------------------------------------------
+// DEFINE MOVEMENT KEYS THAT WILL GET SENT TO BOTH WOW'S.
+// ADD MORE KEYS IF YOU WANT.
+//-----------------------------------------------------------
+//<MovementHotkey ScrollLockOn up, down, left, right>
+//<SendLabel w1, w2>
+//<Key %Trigger%>
+
+//-----------------------------------------------------------
+// BROADCAST MOUSE CLICKS. HOLD DOWN OEM3 (ON U.S. KEYBOARDS,
+// THAT'S THE SQUIGGLE KEY IN UPPPER LEFT CORNER) WHEN YOU
+// WANT TO BROADCAST.
+//-----------------------------------------------------------
+<UseKeyAsModifier Oem3>
+
+<Hotkey ScrollLockOn Oem3 LButton, MButton, RButton, Button4, Button5>
+   <SendLabel w1, w2>
+      <ClickMouse %TriggerMainKey%>
