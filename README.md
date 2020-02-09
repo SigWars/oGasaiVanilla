@@ -12,13 +12,3 @@ Requirements
 - Visual C++ Redistributable for Visual Studio 2015 : https://www.microsoft.com/en-us/download/details.aspx?id=48145
 - DirectX End-User Runtime : https://www.microsoft.com/en-us/download/details.aspx?id=35
 
-
-Vanilla 
-
-HOST
-
-192.158.228.97 tumadre.000webhostapp.com
-=======
-# oGasaiVanilla
-oGassai for Vanilla Modified
->>>>>>> 698eac2fa9e56d067cc50fad35ec0d26021ecf09
