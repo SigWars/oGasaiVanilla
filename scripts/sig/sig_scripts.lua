@@ -192,18 +192,24 @@ end
 
 function sig_scripts:randomgatherMsg()
 	
-	local rand = math.random(5);
+	local rand = math.random(9);
 	
 	if (rand == 1) then
-		return "Catar essa besteirinha aqui";
+		return "catar essa besteirinha aqui";
 	elseif (rand == 2) then
-		return "Pera pera outra besteirinha aqui";
+		return "pera pera outra besteirinha aqui";
 	elseif (rand == 3) then
-		return "Achei outra";
+		return "achei outra";
 	elseif (rand == 4) then
-		return "Aqui tem +1";
-	elseif(rand == 5) then
-		return "perai que to com sorte";		
+		return "aqui tem +1";
+	elseif (rand == 6) then
+		return "opa";
+	elseif (rand == 7) then
+		return "tem outro aqui";
+	elseif (rand == 8) then
+		return "espera";
+	elseif (rand == 9) then
+		return "ai sim";		
 	end
 end
 

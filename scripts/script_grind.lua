@@ -401,7 +401,7 @@ function script_grind:assignTarget()
 	-- Return a target attacking our group
 	local i, targetType = GetFirstObject();
 	while i ~= 0 do
-		if (script_grind:isTargetingGroup(i)) then
+		if (script_grind:isTargetingGroup(i) or script_follow:isTargetMasterPet(i)) then
 			return i;
 		end
 		i, targetType = GetNextObject(i);

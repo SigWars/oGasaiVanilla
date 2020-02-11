@@ -79,22 +79,37 @@ end
 function script_follow:HelpPets()
 	
 	-- Prevent run away bug	
-	if (self.PetObject ~= 0 and self.PetObject ~= nil and sig_scripts:CalculateDistance(localObj,self.PetObject) < 100) then
+	if (self.PetObject ~= 0 and self.PetObject ~= nil and sig_scripts:CalculateDistance(localObj,self.PetObject) < 150) then
 	
 		local localMana = GetLocalPlayer():GetManaPercentage();
 		if (not IsStanding()) then StopMoving(); end
 		
 		local PetHP = self.PetObject:GetHealthPercentage();
 		
+		-- Revive
+		if (not IsInCombat() and self.PetObject:IsDead()) then
+			if (self.PetObject:GetDistance() > 20) then
+				if (script_follow:moveInLineOfSight(self.PetObject)) then 
+					return true; 
+				end
+			end
+			if (Cast('Resurrection', self.PetObject)) then
+				self.message = "Ressurrecting Master...";
+				self.waitTimer = GetTimeEX() + 5500;
+				return true;
+			end
+		end
+		
+		--[[
 		-- Ress partMaster Master
 		if (self.PetObject:GetUnitName() == self.PetName and not IsInCombat() and self.PetObject:IsDead()) then
-			TargetByName(self.PetObject:GetUnitName());
+			-- TargetByName(self.PetObject:GetUnitName());
 			if (Cast('Resurrection', self.PetObject)) then
 				self.message = "Ressurrecting Master Pet...";
 				self.waitTimer = GetTimeEX() + 5500;
 				return true;
 			end
-		end
+		end]]--
 		
 		if (PetHP > 0 and PetHP < 90 and localMana > 5 and self.PetObject:GetUnitName() == self.PetName) then
 			
@@ -141,7 +156,16 @@ function script_follow:HelpPets()
 				end
 			end
 		end
-
+		-- Buffs
+		if (not IsInCombat() and localMana > 40) then -- buff
+			if (not self.PetObject:HasBuff("Shadow Protection") and HasSpell("Shadow Protection")) then
+				if (script_follow:moveInLineOfSight(self.PetObject)) then return true; end -- move to member
+				if (Buff("Shadow Protection", self.PetObject)) then
+					return true;
+				end
+			end	
+		end
+		
 		if (not IsInCombat() and localMana > 40) then -- buff
 			if (not self.PetObject:HasBuff("Power Word: Fortitude") and HasSpell("Power Word: Fortitude")) then
 				if (script_follow:moveInLineOfSight(self.PetObject)) then return true; end -- move to member
@@ -174,7 +198,7 @@ function script_follow:healAndBuff()
 						return true; 
 					end
 				end
-				if (Cast('Resurrection', self.PetObject)) then
+				if (Cast('Resurrection', self.partyMember)) then
 					self.message = "Ressurrecting Master...";
 					self.waitTimer = GetTimeEX() + 5500;
 					return true;
@@ -226,6 +250,16 @@ function script_follow:healAndBuff()
 					end
 				end
 			end
+			
+			-- Buffs
+			if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
+				if (not partyMember:HasBuff("Shadow Protection") and HasSpell("Shadow Protection")) then
+					if (script_follow:moveInLineOfSight(partyMember)) then return true; end -- move to member
+					if (Buff("Shadow Protection", partyMember)) then
+						return true;
+					end
+				end	
+			end
 
 			if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
 				if (not partyMember:HasBuff("Power Word: Fortitude") and HasSpell("Power Word: Fortitude")) then
@@ -268,7 +302,7 @@ function script_follow:GetMasterPet()
 	local currentObj, typeObj = GetFirstObject(); 
 	while currentObj ~= 0 do 
     	if (typeObj == 3 and not currentObj:IsDead()) then
-			if (currentObj:GetDistance() < 150 and currentObj:GetUnitName() == self.PetName ) then 
+			if (currentObj:GetUnitName() == self.PetName ) then 
 				return currentObj;
 				--self.message = "Master with name " .. currentObj:GetUnitName() .. " Found..";
 			end 
@@ -435,15 +469,16 @@ function script_follow:run()
 				self.lootObj = nil;
 			end
 			if (self.lootObj == 0) then self.lootObj = nil; end
-			local isLoot = not IsInCombat() and not (self.lootObj == nil);
-			if (isLoot and not AreBagsFull() and sig_scripts:isAreaNearTargetSafe(localObj)) then
+			local isLoot = not IsInCombat() and not (self.lootObj == nil) and sig_scripts:isAreaNearTargetSafe(self.lootObj);
+			if (isLoot and not AreBagsFull()) then
 				script_grindEX:doLoot(localObj);
 				return;
 			elseif (AreBagsFull() and not hsWhenFull) then
 				self.lootObj = nil;
 				self.message = "Warning the bags are full...";
-			elseif (not sig_scripts:isAreaNearTargetSafe(localObj)) then
+			elseif (not (self.lootObj == nil) and not sig_scripts:isAreaNearTargetSafe(self.lootObj)) then
 				self.message = "Corpose is in unsafe area...";
+				self.lootObj = nil;
 			end
 		end
 				
@@ -457,6 +492,8 @@ function script_follow:run()
 		if (self.ptLeader ~= 0 and self.ptLeader ~= nil and self.targetOfptLeader ~= 0 and self.targetOfptLeader ~= nil) then
 			if(not self.ptLeader:IsDead() and self.targetOfptLeader:GetGUID() == self.ptLeader:GetGUID()) then
 				-- Disable Combat Script and Target Script
+				self.enemyObj = nil
+				ClearTarget();
 				self.IgnoreAttacks = true;
 				self.message = "Following " .. self.ptLeader:GetUnitName() .. " ignoring combat...";
 				
@@ -464,8 +501,10 @@ function script_follow:run()
 				if (self.ptLeader:GetDistance() > self.followDistance) then
 					local x, y, z = self.ptLeader:GetPosition();
 					script_nav:moveToTarget(GetLocalPlayer(), x, y, z);
-					return;
 				end	
+				
+				-- Return
+				return;
 			else
 				self.IgnoreAttacks = false;
 			end
@@ -551,10 +590,12 @@ function script_follow:run()
 			end
 		end	
 		
-		-- Check: If we are a priest and we are at least 3 party members, dont do damage if mana below 90%
+		 --[[
+		 -- Check: If we are a priest and we are at least 3 party members, dont do damage if mana below 90%
 		 if (HasSpell('Smite') and GetNumPartyMembers() > 1 and GetLocalPlayer():GetManaPercentage() < 90) then
 		 	self.enemyObj = nil;
 		 end
+		 ]]--
 		
 		-- Check: If we are a priest and not do damage if pet life below 70%
 		 if (HasSpell('Smite') and self.PetObject ~= nil and self.PetObject ~= 0 and self.PetObject:GetHealthPercentage() < 70) then
