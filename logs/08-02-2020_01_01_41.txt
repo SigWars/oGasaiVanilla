@@ -1,1 +1,0 @@
-hotspotDB:addHotspot("Hillsbrad Fields 28 - 30", "Undead", 28, 30, -558.26, -52.22, 45.8);

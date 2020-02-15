@@ -293,6 +293,7 @@ function script_runner:setup()
 	script_runner:addDestination("Ratchet - The Barrens", -1028.38, -3669.89, 22.95, 1, 17);
 	script_runner:addDestination("Solliden Farmstead", 2396.95, 1525.47, 32.06, 0, 0);
 	script_runner:addDestination("Shadowfang Keep", -231.34, 1572.06, 76.89, 0, 0);
+	script_runner:addDestination("Desolace - Ghost Walker Post", -1232.25, 1725.04, 89.9, 0, 0);
 
 	self.isSetup = true;
 end

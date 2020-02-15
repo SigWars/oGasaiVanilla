@@ -1,2 +1,0 @@
-hotspotDB:addHotspot("Thousand Needles 30 - 32", "Undead", 30, 32, -5172.64, -2517.16, -51.23);
-hotspotDB:addHotspot("Thousand Needles 30 - 32", "Undead", 30, 32, -5172.64, -2517.16, -51.23);

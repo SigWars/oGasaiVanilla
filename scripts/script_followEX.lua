@@ -103,7 +103,7 @@ function script_followEX:menu()
 	Separator();
 
 		if (CollapsingHeader("[Follower - Basic Options")) then
-			wasClicked, script_follow.enableGather = Checkbox("Gatgher in follow", script_follow.enableGather);
+			wasClicked, script_follow.enableGather = Checkbox("Gatgher professions?", script_follow.enableGather);
 			SameLine(); wasClicked, script_follow.gatherForQuest = Checkbox("Gather for quests?", script_follow.gatherForQuest);
 			
 			wasClicked, script_follow.autoTalent = Checkbox("Auto Talent?", script_follow.autoTalent);
@@ -111,30 +111,41 @@ function script_followEX:menu()
 			wasClicked, script_follow.IgnoreAttacks = Checkbox("Ignore Attacks", script_follow.IgnoreAttacks);
 			SameLine(); wasClicked, script_follow.skipLooting = Checkbox("Skip Looting", script_follow.skipLooting);
 			wasClicked, script_follow.useMount = Checkbox("Use Mount", script_follow.useMount);
-			
-			Text("This PET wil be Healed by Priests automaticaly");
-			script_follow.PetName = InputText("Party pet name", script_follow.PetName);
-			Text("Follower will gather Quest Objects with the exact name");	
+			SameLine(); wasClicked, script_follow.useQuestItem = Checkbox("Use Quest Item", script_follow.useQuestItem);
+
+		end
+		-- Quest Objectives
+		if (script_follow.gatherForQuest)then
+			Text("#### OBJECTS TO INTERACT ####");	
 			script_follow.QuestObjectName1 = InputText("Name GameObject 1", script_follow.QuestObjectName1);
 			script_follow.QuestObjectName2 = InputText("Name GameObject 2", script_follow.QuestObjectName2);
-			script_follow.QuestObjectName3 = InputText("DisplayID GameObject 3", script_follow.QuestObjectName3);
-			Text("Distance off GameObject to gather");	
-			script_follow.gatherQuestDistance  = SliderInt("Distance", 0, 150, script_follow.gatherQuestDistance);
+			script_follow.QuestObjectName3 = InputText("Or GameObject DisplayID", script_follow.QuestObjectName3);
+			script_follow.gatherQuestDistance  = SliderInt("Gather Distance", 0, 150, script_follow.gatherQuestDistance);
+		end		
+		if (script_follow.useQuestItem) then
+			Separator();
+				Text("#### ITEM ####");	
+				script_follow.questItemName = InputText("Item Name", script_follow.questItemName);
+				script_follow.objectiveName = InputText("Object/Unit will use item", script_follow.objectiveName);
 		end
+		
 
 		if (CollapsingHeader("[Follower - Combat")) then
 			local wasClicked = false;
-			Text("Combat options:");
+			Text("#### ESPECIFICS ####");
+			Text("Name of pet Healed/Assited - Preiest Heals and Warrior Taunts");
+			script_follow.PetName = InputText("Party pet name", script_follow.PetName);
 			script_follow.minFollowDist  = SliderInt("Minimal Follow Distance", 3, 25, script_follow.minFollowDist);
 			script_follow.maxFollowDist  = SliderInt("Maximun Follow Distance", 3, 25, script_follow.maxFollowDist);
 			-- script_follow.minFollowDist = InputText("Minimal Follow Distance", script_follow.minFollowDist);
 			-- script_follow.maxFollowDist = InputText("Maximun Follow Distance", script_follow.maxFollowDist);
 			script_follow.dpsHp = SliderInt("Monster health when we DPS", 1, 100, script_follow.dpsHp);
 			Separator();
-
+			Text("#### LOOT ####");
 			script_follow.findLootDistance = SliderFloat("Find Loot Distance (yd)", 1, 100, script_follow.findLootDistance);	
 			script_follow.lootDistance = SliderFloat("Loot Distance (yd)", 1, 6, script_follow.lootDistance);
 			Separator();
+			Text("#### MOUNT ####");
 			script_follow.disMountRange = SliderInt("Dismount range", 1, 100, script_follow.disMountRange);
 			Separator();
 			Text("Script tick rate options:");
@@ -142,11 +153,14 @@ function script_followEX:menu()
 		end	
 	-- end
 
-	Separator();
-	Text("CLASS ESPECIFICS:");
-	Separator();
-	-- script_gather:menu();
-	sig_scripts:loadclass();
+		Separator();
+		Separator();
+		sig_scripts:loadclass();
+		
+		if (script_follow.enableGather)then
+			script_gather:menu();
+		end
+		
 
 	
 	if (CollapsingHeader('[Display options')) then

@@ -1,8 +1,21 @@
 sig_scripts = {
 	-- sig scripts
 	debuffableSpells = {"Spell1","Spell2"},
-	debuffableCurses = {"Course1","Course2"}
+	debuffableCurses = {"Course1","Course2"},
+	waitTime = GetTimeEX()
 }
+--------------------
+-- BAG SCRIPTS
+function sig_scripts:UseContainerItemByName(search)
+  for bag = 0,4 do
+    for slot = 1,GetContainerNumSlots(bag) do
+      local item = GetContainerItemLink(bag,slot)
+      if item and string.find(item,search) then
+        UseContainerItem(bag,slot)
+      end
+    end
+  end
+end
 --------------------
 -- Count Spell table
 function sig_scripts:countTable(stringTable)
@@ -75,6 +88,49 @@ end
 ----------------------------------------
 -- TARGETING FUNCTIONS
 ----------------------------------------
+function sig_scripts:unitbyNameIsInRange(unitname, range)
+	local currentObj, typeObj = GetFirstObject(); 
+	while currentObj ~= 0 do 
+    	if (currentObj:GetDistance() < range and currentObj:GetUnitName() == unitname) then
+			return currentObj;
+       	end
+        currentObj, typeObj = GetNextObject(currentObj); 
+    end
+    return 0;
+end
+
+function sig_scripts:usequestItem(objectsname, questItemName, range)
+
+	if (self.waitTime > GetTimeEX()) then
+		return false;
+	end
+	
+	local lista = { strsplit(',', objectsname) };
+	
+	-- local lista = {'Dying Kodo','Ancient Kodo','Aged Kodo',};
+	for i, unitname in ipairs(lista) do 
+		DEFAULT_CHAT_FRAME:AddMessage(unitname);
+		local objTarget = sig_scripts:unitbyNameIsInRange(unitname, range);
+		if (objTarget ~= 0 and objTarget:CanAttack()) then
+			if(self.questItemName ~= 'None')then
+				-- Follow
+				if (objTarget:GetDistance() > 4) then
+					local x, y, z = objTarget:GetPosition();
+					script_nav:moveToTarget(GetLocalPlayer(), x, y, z);
+					self.waitTime = GetTimeEX() + 1000
+					return true;
+				else 
+				-- UseItem
+					TargetByName(objTarget:GetUnitName());
+					sig_scripts:UseContainerItemByName(questItemName);
+					self.waitTime = GetTimeEX() + 5000
+					return true;
+				end	
+			end	
+		end
+	end 
+	return false;
+end
 
 function sig_scripts:isTargetingGroup(y) 
 -- usage:

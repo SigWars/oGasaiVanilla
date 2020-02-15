@@ -1,2 +1,0 @@
-hotspotDB:addHotspot("Hillsbrad Foothills 27 - 29", "Undead", 27, 29, -488.47, -658.3, 49.15);
-hotspotDB:addHotspot("Hillsbrad Foothills 27 - 29", "Undead", 27, 29, -288.35, -811.89, 56.79);

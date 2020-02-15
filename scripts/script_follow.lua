@@ -33,6 +33,9 @@ script_follow = {
 	QuestObjectName1 = 'None',
 	QuestObjectName2 = 'None',
 	QuestObjectName3 = 'Number',
+	useQuestItem = false,
+	questItemName = 'Kodo Kombobulator',
+	objectiveName = 'Dying Kodo,Ancient Kodo,Aged Kodo',
 	drawGather = false,
 	nextToNodeDist = 4, -- (Set to about half your nav smoothness)
 	isSetup = false,
@@ -508,7 +511,58 @@ function script_follow:run()
 			else
 				self.IgnoreAttacks = false;
 			end
+		else	
+			self.IgnoreAttacks = false;
+		end 
+		
+		-- Use item for quests in target of the party leader
+		-- Kodo Kombobulator
+		if ((self.enemyObj == 0 or self.enemyObj == nil) and self.useQuestItem and not IsInCombat()) then
+			--[[if (sig_scripts:usequestItem(self.objectiveName, self.questItemName, 40)) then
+				self.waitTimer = GetTimeEX() + 5000;
+				return;
+			end]]--
+			
+			if (self.ptLeader ~= 0) then
+				
+				if (self.targetOfptLeader ~= 0) then
+					local lista = { strsplit(',', self.objectiveName) };
+					
+					for i, unitname in ipairs(lista) do 
+						-- DEFAULT_CHAT_FRAME:AddMessage(unitname);
+						
+						if (self.targetOfptLeader:GetUnitName() == unitname) then
+							if(self.questItemName ~= 'None')then
+								-- Follow
+								if (self.targetOfptLeader:GetDistance() > 10) then
+									local x, y, z = self.targetOfptLeader:GetPosition();
+									script_nav:moveToTarget(GetLocalPlayer(), x, y, z);
+									-- self.waitTime = GetTimeEX() + 1000
+								else 
+								-- UseItem
+									TargetByName(self.targetOfptLeader:GetUnitName());
+									sig_scripts:UseContainerItemByName(self.questItemName);
+									self.waitTime = GetTimeEX() + 5000
+								end	
+								return;
+							end	
+						end
+					end 
+					
+				end
+				
+			end
+			
 		end
+		
+		
+		--[[if ((self.enemyObj == 0 or self.enemyObj == nil) and self.useQuestItem and not IsInCombat()) then
+			if (sig_scripts:usequestItem(self.objectiveName, self.questItemName, 40)) then
+				self.waitTimer = GetTimeEX() + 5000;
+				return;
+			end
+		end]]--
+		
 		
 		-- Gather for Quests
 		if ((self.enemyObj == 0 or self.enemyObj == nil) and not IsInCombat() and not AreBagsFull() and not self.bagsFull and not self.Interacting and self.gatherForQuest) then 
@@ -677,7 +731,7 @@ function script_follow:run()
 		end
 		
 		-- interact with the master target
-		if (self.ptLeader ~= 0 and not IsInCombat() and not RunRestScript()) then
+		if (self.ptLeader ~= 0 and not IsInCombat()) then
 			
 			local newTarget = self.ptLeader:GetUnitsTarget();
 			
