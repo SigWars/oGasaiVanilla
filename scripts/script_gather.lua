@@ -23,7 +23,8 @@ script_gather = {
 	blacklistTime = 30,
 	gaterAgainTime = 0,
 	lastPosition = 0, 0, 0,
-	isGathering = false
+	isGathering = false,
+	isGatheringQuest = false
 	
 }
 
@@ -353,44 +354,55 @@ function script_gather:gatherquest()
 	self.nodeID = self.nodeObj:GetObjectDisplayID();
 	
 	if (not sig_scripts:isAreaNearTargetSafe(self.nodeObj)) then
-		self.message = 'Object found but not safe!';
+		-- sig_scripts.message = 'Object found but not safe!';
+		self.isGatheringQuest = false;
 		return false;
 	end
 	
-	if (self.timer > GetTimeEX()) then
-		return true;
-	end
--- Highperch Wyvern Egg
 	
-	if(self.nodeObj ~= nil and self.nodeObj ~= 0 and sig_scripts:isAreaNearTargetSafe(self.nodeObj)) then
 		
-		local _x, _y, _z = self.nodeObj:GetPosition();
-		local dist = self.nodeObj:GetDistance();		
-			
-		if(dist < self.lootDistance) then
-			if(IsMoving()) then
-				StopMoving();
-				self.timer = GetTimeEX() + 150;
-			end
+	if(self.nodeObj ~= nil and self.nodeObj ~= 0) then
+		if (GetTimeEX() > self.timer) then
+			local _x, _y, _z = self.nodeObj:GetPosition();
+			local dist = self.nodeObj:GetDistance();
 
-			if(not IsLooting() and not IsChanneling()) then
-				self.nodeObj:GameObjectInteract();
-				self.timer = GetTimeEX() + 1250;
-			end
-			if (not LootTarget()) then
-				self.timer = GetTimeEX() + 650;
-				return;
-			end
-		else
-			if (_x ~= 0) then
-				script_nav:moveToNav(GetLocalPlayer(), _x, _y, _z);
-				self.timer = GetTimeEX() + 150;
-			end
-		end
+			self.isGatheringQuest = true; -- set is gathing at moment
+			-- sig_scripts.message = tostring(IsLooting());
+			-- sig_scripts.message = tostring(not self.nodeObj:GameObjectInteract());
+				
+			if(dist <= self.lootDistance) then
+				if(IsMoving()) then
+					StopMoving();
+					-- self.timer = GetTimeEX() + 350;
+				end
 
+				if(not IsLooting() and not IsChanneling()) then -- Not casted is is chaneling
+					if (self.nodeObj:GameObjectInteract()) then
+						-- self.nodeObj:GameObjectInteract();
+						sig_scripts.message = 'Openning...';
+					end
+				end
+				
+				if (IsLooting()) then
+				sig_scripts.message = 'Looting....';
+					self.timer = GetTimeEX() + 1000;
+					LootTarget();
+					
+				end
+			else
+				-- if (_x ~= 0) then
+				if (dist > self.lootDistance) then
+					sig_scripts.message = 'Moving to quest obejective...';
+					script_nav:moveToNav(GetLocalPlayer(), _x, _y, _z);
+					self.timer = GetTimeEX() + 150;
+				end
+				-- end
+			end
+		end	
 		return true;
 	end
-
+	
+	self.isGatheringQuest = false;
 	return false;
 end
 

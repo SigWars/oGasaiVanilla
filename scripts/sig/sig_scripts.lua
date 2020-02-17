@@ -1,5 +1,6 @@
 sig_scripts = {
 	-- sig scripts
+	message = "Sig scripts loaded",
 	debuffableSpells = {"Spell1","Spell2"},
 	debuffableCurses = {"Course1","Course2"},
 	waitTime = GetTimeEX()
@@ -43,6 +44,31 @@ function sig_scripts:isCurseDebuffable(curseName)
 		end
 	end
 	return false;
+end
+
+function sig_scripts:CastChekingRange(spellname, target, spelltype)
+
+	if (target:IsSpellInRange(spellname)) then
+		
+		if (spelltype == "Buff") then
+			if (Buff(spellname, target)) then
+				return true;
+			end
+		else
+			-- Cast/Buff
+			if (Cast(spellname, target)) then
+				return true;
+			end
+		end	
+	else
+		-- Move in line of sight and in range of the party member
+		if (script_follow:moveInLineOfSight(target)) then 
+			return true; 
+		end
+	end	
+	
+	return false;
+	
 end
 ----------------------------------------
 -- PARTY FUNCTIONS
@@ -236,12 +262,12 @@ function sig_scripts:classVars(arg)
 	
 	elseif (class == 'Paladin' or class == 'Warrior' or class == 'Rogue') then
 		if (arg == "minFollowDist") then return 4; end
-		if (arg == "maxFollowDist") then return 7; end
+		if (arg == "maxFollowDist") then return 8; end
 		if (arg == "dpsHp") then return 99; end		
 	
 	elseif (class == 'Druid' or class == 'Shaman') then
 		if (arg == "minFollowDist") then return 6; end
-		if (arg == "maxFollowDist") then return 10; end
+		if (arg == "maxFollowDist") then return 12; end
 		if (arg == "dpsHp") then return 95; end
 	end
 end

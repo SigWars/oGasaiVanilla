@@ -262,7 +262,7 @@ function script_shaman:run(targetGUID)
 			end
 
 			-- Check: Lightning Shield
-			if (not localObj:HasBuff('Lightning Shield')) then
+			if (HasSpell('Lightning Shield') and not localObj:HasBuff('Lightning Shield')) then
 				if (Buff("Lightning Shield", localObj)) then
 					return 0;
 				end

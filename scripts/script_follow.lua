@@ -34,10 +34,10 @@ script_follow = {
 	QuestObjectName2 = 'None',
 	QuestObjectName3 = 'Number',
 	useQuestItem = false,
-	questItemName = 'Kodo Kombobulator',
-	objectiveName = 'Dying Kodo,Ancient Kodo,Aged Kodo',
+	questItemName = "Foreman's Blackjack",
+	objectiveName = 'Lazy Peon,None',
 	drawGather = false,
-	nextToNodeDist = 4, -- (Set to about half your nav smoothness)
+	nextToNodeDist = 3, -- (Set to about half your nav smoothness)
 	isSetup = false,
 	drawUnits = false,
 	acceptTimer = GetTimeEX(),
@@ -55,7 +55,7 @@ script_follow = {
 	PetObject = nil,
 	ptLeader = nil,
 	targetOfptLeader = nil,
-	PetName = 'Catuca',
+	PetName = 'Gelpit',
 	IgnoreAttacks = false,
 	autoTalent = false,
 	tankMode = false
@@ -183,6 +183,8 @@ function script_follow:HelpPets()
 end -- function
 
 function script_follow:healAndBuff()
+	
+	local class = UnitClass("player");
 
 	local localMana = GetLocalPlayer():GetManaPercentage();
 	if (not IsStanding()) then StopMoving(); end
@@ -192,87 +194,193 @@ function script_follow:healAndBuff()
 		if (i == GetNumPartyMembers()+1) then partyMember = GetLocalPlayer(); end
 		local partyMembersHP = partyMember:GetHealthPercentage();
 		
-		if (partyMember ~= nil and partyMember ~= 0 and sig_scripts:CalculateDistance(localObj,partyMember) < 100) then
-			
-			-- Revive
-			if (not IsInCombat() and partyMember:IsDead()) then
-				if (partyMember:GetDistance() > 20) then
-					if (script_follow:moveInLineOfSight(partyMember)) then 
-						return true; 
-					end
-				end
-				if (Cast('Resurrection', self.partyMember)) then
-					self.message = "Ressurrecting Master...";
-					self.waitTimer = GetTimeEX() + 5500;
-					return true;
-				end
-			end
-			
-			if (partyMembersHP > 0 and partyMembersHP < 99 and localMana > 5) then
+		---------------------------
+		-- PRIEST
+		---------------------------
+		if (class == 'Priest') then
+			if (partyMember ~= nil and partyMember ~= 0 and sig_scripts:CalculateDistance(localObj,partyMember) < 100) then
 				
-				-- Move in line of sight and in range of the party member
-				if (script_follow:moveInLineOfSight(partyMember)) then 
-					return true; 
-				end
-				
-				-- Renew
-				if (localMana > 10 and partyMembersHP < 90 and not partyMember:HasBuff("Renew") and HasSpell("Renew")) then
-					if (Buff('Renew', partyMember)) then
-						return true;
+				-- Revive
+				if (not IsInCombat() and partyMember:IsDead()) then
+					if (not partyMember:IsSpellInRange('Resurrection')) then
+						if (script_follow:moveInLineOfSight(partyMember)) then 
+							return true; 
+						end
 					end
-				end
-
-				-- Shield
-				if (localMana > 10 and partyMembersHP < 80 and not partyMember:HasDebuff("Weakened Soul") and IsInCombat() and HasSpell("Power Word: Shield")) then
-					if (Buff('Power Word: Shield', partyMember)) then 
-						return true; 
-					end
-				end
-
-				-- Lesser Heal
-				if (localMana > 10 and partyMembersHP < 70) then
-					if (Cast('Lesser Heal', partyMember)) then
-						self.waitTimer = GetTimeEX() + 3500;
-						return true;
-					end
-				end
-
-				-- Heal
-				if (localMana > 15 and partyMembersHP < 50 and HasSpell("Heal")) then
-					if (Cast('Heal', partyMember)) then
-						self.waitTimer = GetTimeEX() + 4500;
-						return true;
-					end
-				end
-
-				-- Greater Heal
-				if (localMana > 25 and partyMembersHP < 30 and HasSpell("Greater Heal")) then
-					if (Cast('Greater Heal', partyMember)) then
+					if (Cast('Resurrection', partyMember)) then
+						self.message = "Ressurrecting Master...";
 						self.waitTimer = GetTimeEX() + 5500;
 						return true;
 					end
 				end
-			end
-			
-			-- Buffs
-			if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
-				if (not partyMember:HasBuff("Shadow Protection") and HasSpell("Shadow Protection")) then
-					if (script_follow:moveInLineOfSight(partyMember)) then return true; end -- move to member
-					if (Buff("Shadow Protection", partyMember)) then
-						return true;
+				
+				if (partyMembersHP > 0 and partyMembersHP < 99 and localMana > 5) then
+					
+					
+					-- Renew
+					if (localMana > 10 and partyMembersHP < 90 and not partyMember:HasBuff("Renew") and HasSpell("Renew")) then
+						if (not partyMember:IsSpellInRange('Renew')) then
+							if (script_follow:moveInLineOfSight(partyMember)) then 
+								return true; 
+							end
+						end
+						if (Buff('Renew', partyMember)) then
+							return true;
+						end
 					end
-				end	
-			end
 
-			if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
-				if (not partyMember:HasBuff("Power Word: Fortitude") and HasSpell("Power Word: Fortitude")) then
-					if (script_follow:moveInLineOfSight(partyMember)) then return true; end -- move to member
-					if (Buff("Power Word: Fortitude", partyMember)) then
-						return true;
+					-- Shield
+					if (localMana > 10 and partyMembersHP < 80 and not partyMember:HasDebuff("Weakened Soul") and IsInCombat() and HasSpell("Power Word: Shield")) then
+						if (not partyMember:IsSpellInRange('Power Word: Shield')) then
+							if (script_follow:moveInLineOfSight(partyMember)) then 
+								return true; 
+							end
+						end
+						if (Buff('Power Word: Shield', partyMember)) then 
+							return true; 
+						end
 					end
-				end	
-			end
-		end -- Primeira
+
+					-- Lesser Heal
+					if (localMana > 10 and partyMembersHP < 70) then
+						if (not partyMember:IsSpellInRange('Lesser Heal')) then
+							if (script_follow:moveInLineOfSight(partyMember)) then 
+								return true; 
+							end
+						end
+						if (Cast('Lesser Heal', partyMember)) then
+							self.waitTimer = GetTimeEX() + 3500;
+							return true;
+						end
+					end
+
+					-- Heal
+					if (localMana > 15 and partyMembersHP < 50 and HasSpell("Heal")) then
+						if (not partyMember:IsSpellInRange('Heal')) then
+							if (script_follow:moveInLineOfSight(partyMember)) then 
+								return true; 
+							end
+						end
+						if (Cast('Heal', partyMember)) then
+							self.waitTimer = GetTimeEX() + 4500;
+							return true;
+						end
+					end
+
+					-- Greater Heal
+					if (localMana > 25 and partyMembersHP < 30 and HasSpell("Greater Heal")) then
+						if (not partyMember:IsSpellInRange('Greater Heal')) then
+							if (script_follow:moveInLineOfSight(partyMember)) then 
+								return true; 
+							end
+						end
+						if (Cast('Greater Heal', partyMember)) then
+							self.waitTimer = GetTimeEX() + 5500;
+							return true;
+						end
+					end
+				end
+				
+				-- Buffs
+				if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
+					if (not partyMember:HasBuff("Shadow Protection") and HasSpell("Shadow Protection")) then
+						if (script_follow:moveInLineOfSight(partyMember)) then return true; end -- move to member
+						if (Buff("Shadow Protection", partyMember)) then
+							return true;
+						end
+					end	
+				end
+
+				if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
+					if (not partyMember:HasBuff("Power Word: Fortitude") and HasSpell("Power Word: Fortitude")) then
+						if (script_follow:moveInLineOfSight(partyMember)) then return true; end -- move to member
+						if (Buff("Power Word: Fortitude", partyMember)) then
+							return true;
+						end
+					end	
+				end
+			end -- Primeira
+		end -- Priest
+		
+		---------------------------
+		-- MAGE
+		---------------------------
+		if (class == 'Mage') then
+			if (partyMember ~= nil and partyMember ~= 0 and sig_scripts:CalculateDistance(localObj,partyMember) < 100) then
+				
+				if (partyMembersHP > 0 and localMana > 5) then
+			
+
+					-- Heal
+					--[[
+					if (localMana > 15 and partyMembersHP < 50 and HasSpell("Heal")) then
+						if (not partyMember:IsSpellInRange('Greater Heal')) then
+							if (script_follow:moveInLineOfSight(partyMember)) then 
+								return true; 
+							end
+						end
+						if (Cast('Heal', partyMember)) then
+							self.waitTimer = GetTimeEX() + 4500;
+							return true;
+						end
+					end
+					]]--
+					
+					--------------------
+					-- Buffs
+					--------------------
+					if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
+						if (not partyMember:HasBuff("Arcane Intellect") and HasSpell("Arcane Intellect")) then
+							if (script_follow:moveInLineOfSight(partyMember)) then return true; end -- move to member
+							if (Buff("Arcane Intellect", partyMember)) then
+								return true;
+							end
+						end	
+					end
+
+				end
+			end 
+		end -- Mage
+		
+		---------------------------
+		-- SHAMAN
+		---------------------------
+		if (class == 'Shaman') then
+			if (partyMember ~= nil and partyMember ~= 0 and sig_scripts:CalculateDistance(localObj,partyMember) < 100) then
+				
+				if (partyMembersHP > 0 and localMana > 5) then
+
+					-- Heal
+					if (localMana > 15 and partyMembersHP < 50 and HasSpell("Healing Wave")) then
+						if (not partyMember:IsSpellInRange('Greater Heal')) then
+							if (script_follow:moveInLineOfSight(partyMember)) then 
+								return true; 
+							end
+						end
+						if (Cast('Healing Wave', partyMember)) then
+							self.waitTimer = GetTimeEX() + 2500;
+							return true;
+						end
+					end
+					
+					--------------------
+					-- Buffs
+					--------------------
+					--[[
+					if (partyMember ~= nil and partyMember ~= 0 and not IsInCombat() and localMana > 40 and partyMember:GetDistance() < 100) then -- buff
+						if (not partyMember:HasBuff("Arcane Intellect") and HasSpell("Arcane Intellect")) then
+							if (script_follow:moveInLineOfSight(partyMember)) then return true; end -- move to member
+							if (Buff("Arcane Intellect", partyMember)) then
+								return true;
+							end
+						end	
+					end
+					]]--
+
+				end
+			end 
+		end -- Shaman
+			
 	end -- For Loop
 
 	return false;
@@ -400,7 +508,7 @@ function script_follow:run()
 		
 		-- Automatically reset gather status and time to loot
 		if (IsInCombat()) then
-			-- sself.lootWait = GetTimeEX() + 1000;
+			-- self.lootWait = GetTimeEX() + 3000;
 			script_gather.timeGather = GetTimeEX() + 1000;
 			script_gather.isGathering = false;
 		end
@@ -484,16 +592,37 @@ function script_follow:run()
 				self.lootObj = nil;
 			end
 		end
+		
+		--[[if (not IsInCombat() and script_follow:enemiesAttackingUs() == 0 and not localObj:HasBuff('Feign Death')) then
+			-- Loot if there is anything lootable and we are not in combat and if our bags aren't full
+			if (not self.skipLooting and not AreBagsFull()) then 
+				self.lootObj = script_nav:getLootTarget(self.findLootDistance);
+			else
+				self.lootObj = nil;
+			end
+			if (self.lootObj == 0) then self.lootObj = nil; end
+			local isLoot = not IsInCombat() and not (self.lootObj == nil) and sig_scripts:isAreaNearTargetSafe(self.lootObj);
+			if (isLoot and not AreBagsFull()) then
+				script_grindEX:doLoot(localObj);
+				return;
+			elseif (AreBagsFull() and not hsWhenFull) then
+				self.lootObj = nil;
+				sig_scripts.message = "Warning the bags are full...";
+			elseif (not (self.lootObj == nil) and not sig_scripts:isAreaNearTargetSafe(self.lootObj)) then
+				sig_scripts.message = "Corpose is in unsafe area...";
+				self.lootObj = nil;	
+			end
+		end]]--
 				
 		-- Randomize the follow range
 		if (self.followTimer < GetTimeEX()) then 
-			self.followTimer = GetTimeEX() + 20000;
+			self.followTimer = GetTimeEX() + 5000;
 			self.followDistance = math.random(self.minFollowDist,self.maxFollowDist); -- 15,25
 		end
 
 		-- Follow in combat self.IgnoreAttacks 
 		if (self.ptLeader ~= 0 and self.ptLeader ~= nil and self.targetOfptLeader ~= 0 and self.targetOfptLeader ~= nil) then
-			if(not self.ptLeader:IsDead() and self.targetOfptLeader:GetGUID() == self.ptLeader:GetGUID()) then
+			if(self.targetOfptLeader:GetGUID() == self.ptLeader:GetGUID()) then
 				-- Disable Combat Script and Target Script
 				self.enemyObj = nil
 				ClearTarget();
@@ -534,7 +663,7 @@ function script_follow:run()
 						if (self.targetOfptLeader:GetUnitName() == unitname) then
 							if(self.questItemName ~= 'None')then
 								-- Follow
-								if (self.targetOfptLeader:GetDistance() > 10) then
+								if (self.targetOfptLeader:GetDistance() > 2.5) then
 									local x, y, z = self.targetOfptLeader:GetPosition();
 									script_nav:moveToTarget(GetLocalPlayer(), x, y, z);
 									-- self.waitTime = GetTimeEX() + 1000
@@ -542,7 +671,7 @@ function script_follow:run()
 								-- UseItem
 									TargetByName(self.targetOfptLeader:GetUnitName());
 									sig_scripts:UseContainerItemByName(self.questItemName);
-									self.waitTime = GetTimeEX() + 5000
+									-- self.waitTime = GetTimeEX() + 5000
 								end	
 								return;
 							end	
@@ -657,7 +786,12 @@ function script_follow:run()
 		 end
 
 		-- Check: If we are a priest and not do damage if Leader life below 70%
-		 if (HasSpell('Smite') and leader ~= nil and self.ptLeader ~= 0 and self.ptLeader:GetHealthPercentage() < 70) then
+		 if (HasSpell('Smite') and self.ptLeader ~= 0 and self.ptLeader:GetHealthPercentage() < 70) then
+		 	self.enemyObj = nil;
+		 end
+		 
+		 -- Check: If we are a priest and not do damage if Leader life below 70%
+		 if (HasSpell('Healing Wave') and self.ptLeader ~= 0 and self.ptLeader:GetHealthPercentage() < 70) then
 		 	self.enemyObj = nil;
 		 end
 		
@@ -721,7 +855,7 @@ function script_follow:run()
 		if (script_follow:mountUp()) then return; end		
 		
 		-- Follow our master
-		if (self.ptLeader ~= 0 and not self.Interacting and not script_gather.isGathering) then
+		if (self.ptLeader ~= 0 and not self.Interacting and not script_gather.isGathering and not script_gather.isGatheringQuest) then
 			if(self.ptLeader:GetDistance() > self.followDistance and not self.ptLeader:IsDead()) then
 				local x, y, z = self.ptLeader:GetPosition();
 				-- self.message = "Following " .. self.ptLeader:GetUnitName() .. "...";
@@ -731,7 +865,7 @@ function script_follow:run()
 		end
 		
 		-- interact with the master target
-		if (self.ptLeader ~= 0 and not IsInCombat()) then
+		if (self.ptLeader ~= 0 and not IsInCombat() and not self.useQuestItem) then
 			
 			local newTarget = self.ptLeader:GetUnitsTarget();
 			

@@ -1,5 +1,6 @@
 script_followEX = {
-	sigs = include("scripts\\sig\\sig_scripts.lua")
+	sigs = include("scripts\\sig\\sig_scripts.lua"),
+	waitTimerEx = GetTimeEX()
 }
 
 function script_followEX:drawStatus()
@@ -14,8 +15,8 @@ function script_followEX:drawStatus()
 	if (onScreen) then
 		y, x = tY-25, tX+75;
 	end
-	DrawRect(x - 10, y - 5, x + width, y + 80, 255, 255, 0,  1, 1, 1);
-	DrawRectFilled(x - 10, y - 5, x + width, y + 80, 0, 0, 0, 160, 0, 0);
+	DrawRect(x - 10, y - 5, x + width, y + 120, 255, 255, 0,  1, 1, 1);
+	DrawRectFilled(x - 10, y - 5, x + width, y + 120, 0, 0, 0, 160, 0, 0);
 	if (script_follow:GetPartyLeaderObject() ~= 0) then
 		DrawText('[Follower - Range: ' .. math.floor(script_follow.followDistance) .. ' yd. ' .. 
 			 	'Master target: ' .. script_follow:GetPartyLeaderObject():GetUnitName(), x-5, y-4, r, g, b) y = y + 15;
@@ -23,10 +24,16 @@ function script_followEX:drawStatus()
 		DrawText('[Follower - Follow range: ' .. math.floor(script_follow.followDistance) .. ' yd. ' .. 
 			 	'Master target: ' .. '', x-5, y-4, r, g, b) y = y + 15;
 	end 
+	
 	DrawText('Status: ', x, y, r, g, b); 
 	y = y + 15; DrawText(script_follow.message or "error", x, y, 0, 255, 255);
+	
 	y = y + 20; DrawText('Combat script status: ', x, y, r, g, b); y = y + 15;
 	RunCombatDraw();
+	
+	y = y + 20; DrawText('Sig script status: ', x, y, r, g, b); y = y + 15;
+	y = y + 0; DrawText(sig_scripts.message or "error", x, y, 0, 255, 0);
+	
 end
 
 function script_grindEX:doLoot(localObj)
@@ -38,13 +45,16 @@ function script_grindEX:doLoot(localObj)
 		if (script_follow.lootCheck['target'] == script_follow.lootObj:GetGUID()) then
 			script_follow.lootObj = nil; -- reset lootObj
 			ClearTarget();
+			CloseLoot();
 			script_follow.message = 'Reseting loot target...';
 		end
 		script_follow.lootCheck['timer'] = GetTimeEX() + 10000; -- 10 sec
 		if (script_follow.lootObj ~= nil) then 
 			script_follow.lootCheck['target'] = script_follow.lootObj:GetGUID();
+			CloseLoot();
 		else
 			script_follow.lootCheck['target'] = 0;
+			CloseLoot();
 		end
 		return;
 	end
@@ -84,7 +94,7 @@ function script_grindEX:doLoot(localObj)
 	script_follow.message = "Moving to loot...";		
 	script_nav:moveToTarget(localObj, _x, _y, _z);	
 	script_grind:setWaitTimer(100);
-	if (script_follow.lootObj:GetDistance() < 3) then script_follow.waitTimer = GetTimeEX() + 450; end
+	if (script_follow.lootObj:GetDistance() < 3) then script_follow.waitTimer = GetTimeEX() + 3000; end
 end
 
 function script_followEX:menu()
