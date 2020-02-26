@@ -199,7 +199,7 @@ function script_shaman:run(targetGUID)
 				script_grind:addTargetToBlacklist(targetObj:GetGUID());
 				return 5; 
 			end
-		end 
+		end
 		
 		-- Opener
 		if (not IsInCombat()) then

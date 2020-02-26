@@ -81,6 +81,7 @@ script_grind = {
 	drawAggro = false,
 	safeRess = true,
 	skipHardPull = true,
+	endCombatTime = GetTimeEX(),
 	useUnstuck = true
 }
 
@@ -115,7 +116,7 @@ end
 
 function script_grind:window()
 	EndWindow();
-	if(NewWindow("Logitech's Grinder", 320, 300)) then script_grindMenu:menu(); end
+	if(NewWindow("Grinder", 320, 300)) then script_grindMenu:menu(); end
 end
 
 function script_grind:setWaitTimer(ms)
@@ -273,6 +274,11 @@ function script_grind:run()
 				self.enemyObj = nil;
 			end
 		end
+		
+		-- Wait until get new target
+		if (self.endCombatTime > GetTimeEX() and not IsInCombat()) then
+			return;
+		end
 
 		-- Finish loot before we engage new targets or navigate
 		if (self.lootObj ~= nil and not IsInCombat()) then 
@@ -287,6 +293,9 @@ function script_grind:run()
 		end
 
 		if(self.enemyObj ~= nil or IsInCombat()) then
+			if (IsInCombat()) then
+				self.endCombatTime = GetTimeEX() + 10000;
+			end
 			self.message = "Running the combat script...";
 			-- In range: attack the target, combat script returns 0
 			if(self.combatError == 0) then
@@ -376,12 +385,12 @@ function script_grind:getTarget()
 end
 
 function script_grind:getTargetAttackingUs() 
+	local localObj = GetLocalPlayer();
     local currentObj, typeObj = GetFirstObject(); 
     while currentObj ~= 0 do 
-    	if typeObj == 3 then
-		if (currentObj:CanAttack() and not currentObj:IsDead()) then
-			local localObj = GetLocalPlayer();
-			local targetTarget = currentObj:GetUnitsTarget();
+		if typeObj == 3 then
+			if (currentObj:CanAttack() and not currentObj:IsDead()) then
+				local targetTarget = currentObj:GetUnitsTarget();
 				if (targetTarget ~= 0 and targetTarget ~= nil) then
 					if (targetTarget:GetGUID() == localObj:GetGUID()) then
 						return currentObj:GetGUID();
@@ -397,7 +406,13 @@ function script_grind:getTargetAttackingUs()
     return nil;
 end
 
-function script_grind:assignTarget() 
+function script_grind:assignTarget()
+	
+	local atkgroup = sig_scripts:isAttakingGroup()	
+	if (atkgroup ~= nil) then
+		return atkgroup;
+	end
+ 
 	-- Return a target attacking our group
 	local i, targetType = GetFirstObject();
 	while i ~= 0 do
@@ -449,9 +464,11 @@ end
 
 function script_grind:isTargetingPet(i) 
 	local pet = GetPet();
-	if (pet ~= nil and pet ~= 0 and not pet:IsDead()) then
+	if (pet ~= nil and pet ~= 0 and not pet:IsDead() and i ~= nil) then
 		if (i:GetUnitsTarget() ~= nil and i:GetUnitsTarget() ~= 0) then
-			return i:GetUnitsTarget():GetGUID() == pet:GetGUID();
+			if (i:GetUnitsTarget():GetGUID() == pet:GetGUID()) then
+				return true;
+			end
 		end
 	end
 	return false;
@@ -460,9 +477,12 @@ end
 function script_grind:isTargetingGroup(y) 
 	for i = 1, GetNumPartyMembers() do
 		local partyMember = GetPartyMember(i);
+		-- sig_scripts.message = tostring(partyMember:GetUnitName());
 		if (partyMember ~= nil and partyMember ~= 0 and not partyMember:IsDead()) then
 			if (y:GetUnitsTarget() ~= nil and y:GetUnitsTarget() ~= 0 and not script_grind:isTargetingPet(y)) then
-				return y:GetUnitsTarget():GetGUID() == partyMember:GetGUID();
+				if (y:GetUnitsTarget():GetGUID() == partyMember:GetGUID()) then
+					return true;
+				end
 			end
 		end
 	end
@@ -472,9 +492,11 @@ end
 
 function script_grind:isTargetingMe(i) 
 	local localPlayer = GetLocalPlayer();
-	if (localPlayer ~= nil and localPlayer ~= 0 and not localPlayer:IsDead()) then
+	if (localPlayer ~= nil and localPlayer ~= 0 and not localPlayer:IsDead() and i ~= nil) then
 		if (i:GetUnitsTarget() ~= nil and i:GetUnitsTarget() ~= 0) then
-			return i:GetUnitsTarget():GetGUID() == localPlayer:GetGUID();
+			if (i:GetUnitsTarget():GetGUID() == localPlayer:GetGUID()) then
+				return true;
+			end
 		end
 	end
 	return false;

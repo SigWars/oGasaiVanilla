@@ -31,6 +31,8 @@ script_runner = {
 	avoidAggro = false,
 	drawCicles = false,
 	safeDistance = 5,
+	endcombatWait = GetTimeEX(),
+	pathChangeCombat = true,
 	genTime = GetTimeEX()
 }
 
@@ -316,7 +318,7 @@ local function rP(text, r, g, b)
 	r = r or .91
 	g = g or .91
 	b = b or .91
-	local header = "|cFFFC0000[|r|cFFFF7F00oGasai - Runner|r|cFFFC0000]|r "
+	local header = "|cFFFC0000[|r|cFFFF7F00Sigs - Runner|r|cFFFC0000]|r "
 	DEFAULT_CHAT_FRAME:AddMessage(header .. text, r, g, b)
 end
      
@@ -371,12 +373,17 @@ function script_runner:run()
 	end
 
 	self.timer = GetTimeEX() + self.tic;
+	
+	if(IsInCombat()) then
+		self.endcombatWait = GetTimeEX() + 5000;
+	-- 	self.pathChangeCombat = true;
+	end
 
 	-- Update player coordinates
 	local localObj = GetLocalPlayer();
 	local my_x, my_y, my_z = localObj:GetPosition();
 	local d_x, d_y, d_z = self.tx, self.ty, self.tz;
-
+	
 	-- Update distance to destination
 	self.distDestination = GetDistance3D(my_x, my_y, my_z, self.tx, self.ty, self.tz);
 
@@ -390,7 +397,89 @@ function script_runner:run()
 			end
 			return; 
 		end
-	end 
+	end
+	
+	-- Wait for party memebers if in party
+	if (GetNumPartyMembers() > 1) then
+		for i = 1, GetNumPartyMembers() do
+			local ptMember = GetPartyMember(i)
+			if (ptMember ~= 0 and ptMember ~= nil) then
+				if (ptMember:GetDistance() > 30 and not IsInCombat()) then
+					if(IsMoving()) then
+						StopMoving();
+					end
+					self.timer = GetTimeEX() + 5000;
+					return;
+				end
+			end	
+		end
+	end
+	
+	-- Grind enemyes on the way
+	if (script_follow:enemiesAttackingUs() >= 1 or script_follow:enemiesAttackingParty() >= 1) then
+		local combatError = 0;
+		local target = nil;
+		
+		if (GetTarget() ~= 0 and GetTarget() ~= nil) then
+				target = GetTarget();
+			if (target:CanAttack()) then
+				combatError = RunCombatScript(target:GetGUID());
+			else
+				target = nil;
+				combatError = nil;
+			end
+		end
+		
+		if (script_follow:enemiesAttackingParty() >= 1) then
+			target = sig_scripts:isAttakingGroup();
+		end
+		
+		if(target ~= nil and target ~= 0) then
+			-- rP("Running the combat script...");
+			-- In range: attack the target, combat script returns 0
+			if(combatError == 0) then
+				script_nav:resetNavigate();
+				if IsMoving() then StopMoving(); return; end
+				-- Dismount
+				if (IsMounted()) then DisMount(); return; end
+			end
+			-- Invalid target: combat script return 2
+			if(combatError == 2) then
+				-- TODO: add blacklist GUID here
+				target = nil;
+				ClearTarget();
+				return;
+			end
+			-- Move in range: combat script return 3
+			if (combatError == 3) then
+				rP("Moving to target...");
+				if (target:GetDistance() < 32) then
+					-- Dismount
+					if (IsMounted()) then DisMount(); return; end
+				end
+				local _x, _y, _z = target:GetPosition();
+					local message = script_nav:moveToTarget(GetLocalPlayer(), _x, _y, _z);
+					self.pathChangeCombat = true;
+					rP(message);
+				return;
+			end
+			-- Do nothing, return : combat script return 4
+			if(combatError == 4) then return; end
+			-- Target player pet/totem: pause for 5 seconds, combat script should add target to blacklist
+			if(combatError == 5) then
+				-- rP("Targeted a player pet pausing 5s...");
+				ClearTarget(); self.waitTimer = GetTimeEX()+5000; return;
+			end
+			-- Stop bot, request from a combat script
+			if(combatError == 6) then rP("Combat script request stop bot..."); Logout(); StopBot(); return; end
+		end
+		
+	end
+	
+	-- if (GetTimeEX() > self.endcombatWait) then
+	--	self.pathChangeCombat = true;
+		-- return;
+	-- end
 
 	if (self.avoidTimer > GetTimeEX()) then
 		return;
@@ -399,9 +488,13 @@ function script_runner:run()
 	if (not self.runit) then
 		return;
 	end
-
+	
+	if (self.pathChangeCombat and IsInCombat()) then
+		return;
+	end
+	
 	-- If the target destination has changed, generate a new path
-	if(self.dx ~= self.tx or self.dy ~= self.ty or self.dz ~= self.tz) then
+	if(self.dx ~= self.tx or self.dy ~= self.ty or self.dz ~= self.tz or self.pathChangeCombat) then
 
 		-- update destination position
 		self.dx, self.dy, self.dz = d_x, d_y, d_z;
@@ -411,6 +504,8 @@ function script_runner:run()
 		
 		-- generate a new path
 		GeneratePath(my_x, my_y, my_z, d_x, d_y, d_z);
+		
+		self.pathChangeCombat = false;
 	end	
 
 	-- Return until path has been generated
@@ -456,9 +551,15 @@ function script_runner:run()
 			return;
 		end
 	end
+	
+	if (not script_unstuck:pathClearAuto(2)) then
+		rP("Unstuck...");
+	end
 
 	-- Move to the next node in the path
-	Move(_ix, _iy, _iz);
+	if(not IsInCombat()) then
+		Move(_ix, _iy, _iz);
+	end
 end
 
 function script_runner:menu()

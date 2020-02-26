@@ -384,11 +384,12 @@ function script_gather:gatherquest()
 				end
 				
 				if (IsLooting()) then
-				sig_scripts.message = 'Looting....';
-					self.timer = GetTimeEX() + 1000;
+					sig_scripts.message = 'Looting....';
 					LootTarget();
-					
+					self.timer = GetTimeEX() + 1000;
 				end
+				
+				self.isGatheringQuest = false;
 			else
 				-- if (_x ~= 0) then
 				if (dist > self.lootDistance) then

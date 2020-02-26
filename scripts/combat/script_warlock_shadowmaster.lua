@@ -381,7 +381,7 @@ function script_warlock:run(targetGUID)
 end
 
 function script_warlock:lifeTap(localHealth, localMana)
-	if (localMana < localHealth and HasSpell("Life Tap") and localHealth > 50 and localMana < 90 and not IsMounted()) then
+	if (localMana < localHealth and HasSpell("Life Tap") and localHealth > 90 and localMana < 75 and not IsMounted()) then
 		if(IsSpellOnCD("Life Tap")) then 
 			return false; 
 		else 

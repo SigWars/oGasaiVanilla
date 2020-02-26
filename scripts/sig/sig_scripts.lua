@@ -1,9 +1,15 @@
 sig_scripts = {
 	-- sig scripts
 	message = "Sig scripts loaded",
+	lootmessage = "Waiting for new log",
+	combatmessage = "Waiting for new log",
+	movementmessage = "Waiting for new log",
+	
 	debuffableSpells = {"Spell1","Spell2"},
 	debuffableCurses = {"Course1","Course2"},
-	waitTime = GetTimeEX()
+	useitemTime = GetTimeEX(),
+	tryAgainTime = GetTimeEX(),
+	usingQuestItem = false
 }
 --------------------
 -- BAG SCRIPTS
@@ -17,8 +23,23 @@ function sig_scripts:UseContainerItemByName(search)
     end
   end
 end
+
+function sig_scripts:GetItemQuantity(search)
+  local itemCount = 0;
+  for bag = 0,4 do
+	for slot = 1,GetContainerNumSlots(bag) do
+	  local item = GetContainerItemLink(bag,slot)
+	  local _, stackCount = GetContainerItemInfo(bag,slot)
+	  if item and string.find(item,search) then
+		itemCount = itemCount + stackCount;
+	  end
+	end
+  end
+  return itemCount;
+end
+		
 --------------------
--- Count Spell table
+-- Count tables to get total number of intem inside
 function sig_scripts:countTable(stringTable)
 	local counter = 0;
 	for index in pairs(self.stringTable) do
@@ -37,7 +58,7 @@ function sig_scripts:isSpellDebuffable(spellName)
 	return false;
 end
 
-function sig_scripts:isCurseDebuffable(curseName) 
+function sig_scripts:isCurseDebuffable(curseName)
 	for i=0,sig_scripts:countTable(self.debuffableCurses) do
 		if (curseName == self.debuffableCurses[i]) then
 			return true;
@@ -46,34 +67,11 @@ function sig_scripts:isCurseDebuffable(curseName)
 	return false;
 end
 
-function sig_scripts:CastChekingRange(spellname, target, spelltype)
 
-	if (target:IsSpellInRange(spellname)) then
-		
-		if (spelltype == "Buff") then
-			if (Buff(spellname, target)) then
-				return true;
-			end
-		else
-			-- Cast/Buff
-			if (Cast(spellname, target)) then
-				return true;
-			end
-		end	
-	else
-		-- Move in line of sight and in range of the party member
-		if (script_follow:moveInLineOfSight(target)) then 
-			return true; 
-		end
-	end	
-	
-	return false;
-	
-end
 ----------------------------------------
 -- PARTY FUNCTIONS
 ----------------------------------------
-function sig_scripts:GetPartyLeaderObject() 
+function sig_scripts:GetPartyLeaderObject() -- Return a party lader Return: OBJECT
 	if GetNumPartyMembers() > 0 then -- are we in a party?
 		leaderObj = GetPartyMember(GetPartyLeaderIndex());
 		if (leaderObj ~= nil) then
@@ -85,7 +83,7 @@ end
 ----------------------------------------
 -- AREA FUNCTIONS
 ----------------------------------------
-function sig_scripts:isAreaNearTargetSafe(target) 
+function sig_scripts:isAreaNearTargetSafe(target) -- check if no will agro near the target Return: BOOL
 	local localObj = GetLocalPlayer();
 	local countUnitsInRange = 0;
 	local currentObj, typeObj = GetFirstObject();
@@ -111,74 +109,215 @@ function sig_scripts:isAreaNearTargetSafe(target)
 
 	return true;
 end
+
+
 ----------------------------------------
 -- TARGETING FUNCTIONS
 ----------------------------------------
-function sig_scripts:unitbyNameIsInRange(unitname, range)
-	local currentObj, typeObj = GetFirstObject(); 
-	while currentObj ~= 0 do 
-    	if (currentObj:GetDistance() < range and currentObj:GetUnitName() == unitname) then
-			return currentObj;
-       	end
-        currentObj, typeObj = GetNextObject(currentObj); 
-    end
-    return 0;
+function sig_scripts:getTargetInRangeByName(unitname, range) -- Return a target by the name and range Return: OBJECT
+	local targetObj, targetType = GetFirstObject();
+	local bestTarget = nil;
+	while targetObj ~= 0 do
+		if (targetType == 3) then
+			if(targetObj:GetUnitName() == unitname) then
+				local dist = targetObj:GetDistance();
+				if(dist < range) then
+					local _x, _y, _z = targetObj:GetPosition();
+					if(not IsNodeBlacklisted(_x, _y, _z, 5) and not script_grind:isTargetBlacklisted(targetObj:GetGUID())) then
+						return targetObj;
+					end
+				end
+			end
+		end
+		targetObj, targetType = GetNextObject(targetObj);
+	end
+	return targetObj;
 end
 
-function sig_scripts:usequestItem(objectsname, questItemName, range)
+function sig_scripts:searchingTarget(range)
+	
+	local g, targetType = GetFirstObject();
+	while g ~= 0 do
+		if ((targetType == 3 or targetType == 4) and not g:IsCritter() and not g:IsDead() and g:CanAttack() and g:GetDistance() < range) then
+			if (
+				 script_grind:isTargetingMe(i) or
+				 script_grind:isTargetingGroup(g) or
+				 script_grind:isTargetingPet(i)
+				) then
+				sig_scripts.message = "Target:" .. tostring(g:GetUnitName()) .. " Found At:" .. math.floor(g:GetDistance()).. " Yrd's";
+				return g;
+			end
+		end
+		g, targetType = GetNextObject(g);
+	end
+	return nil;
+end
 
-	if (self.waitTime > GetTimeEX()) then
-		return false;
+
+-- USE ITEM ON PT LEADER TARGET
+function sig_scripts:useItemLeaderTarget()
+
+	if (self.useitemTime > GetTimeEX()) then
+		return true;
 	end
 	
-	local lista = { strsplit(',', objectsname) };
-	
+	local questItemName = script_follow.questItemName;
+	local lista = { strsplit(',', script_follow.objectiveName) };
+	local objTarget = 0;
 	-- local lista = {'Dying Kodo','Ancient Kodo','Aged Kodo',};
 	for i, unitname in ipairs(lista) do 
-		DEFAULT_CHAT_FRAME:AddMessage(unitname);
-		local objTarget = sig_scripts:unitbyNameIsInRange(unitname, range);
-		if (objTarget ~= 0 and objTarget:CanAttack()) then
-			if(self.questItemName ~= 'None')then
-				-- Follow
-				if (objTarget:GetDistance() > 4) then
-					local x, y, z = objTarget:GetPosition();
-					script_nav:moveToTarget(GetLocalPlayer(), x, y, z);
-					self.waitTime = GetTimeEX() + 1000
-					return true;
-				else 
-				-- UseItem
-					TargetByName(objTarget:GetUnitName());
-					sig_scripts:UseContainerItemByName(questItemName);
-					self.waitTime = GetTimeEX() + 5000
-					return true;
-				end	
+		local teste = script_follow.targetOfptLeader;
+		if (teste ~= 0 and teste ~= nil) then
+			if (script_follow.targetOfptLeader:GetUnitName() == unitname) then
+				objTarget = teste;
+				break;
 			end	
-		end
-	end 
+		end	
+	end
+	
+	if (objTarget ~= 0 and objTarget ~= nil and not script_grind:isTargetBlacklisted(objTarget:GetGUID())) then
+		if(questItemName ~= 'None')then
+			-- Follow
+			if (objTarget:GetDistance() > 2) then
+				local x, y, z = objTarget:GetPosition();
+				script_nav:moveToTarget(GetLocalPlayer(), x, y, z);
+			else 
+				
+				-- Stop Move
+				if(IsMoving()) then
+					StopMoving();
+				end
+				
+				-- Sets waittime before blacklist node Default:7000
+				if (GetTimeEX() > self.tryAgainTime) then
+					self.tryAgainTime = GetTimeEX() + 10000;
+				end
+				
+				-- UseItem
+				if (GetTimeEX() > self.tryAgainTime - 9000) then
+					
+					if (script_follow.ptLeader ~= nil and script_follow.ptLeader ~= 0) then
+						ClearTarget();
+						AssistByName(script_follow.ptLeader:GetUnitName());
+					end
+					-- TargetByName(objTarget:GetUnitName(), true);
+					sig_scripts:UseContainerItemByName(questItemName);
+					self.useitemTime = GetTimeEX() + 1000;
+					DEFAULT_CHAT_FRAME:AddMessage(objTarget:GetUnitName());
+				end	
+				
+				-- Try move back 
+				if (GetTimeEX() > self.tryAgainTime - 8000) then
+					-- script_follow:runBackwards(objTarget, 1);
+				end
+				
+				
+				-- Blacklist target
+				if (GetTimeEX() > self.tryAgainTime - 1000) then
+					-- Blacklist target
+					if (not script_grind:isTargetBlacklisted(objTarget:GetGUID())) then
+						self.message = 'Blackliting ' .. objTarget:GetGUID() .. ' Name: ' .. objTarget:GetUnitName();
+						script_grind:addTargetToBlacklist(objTarget:GetGUID()); 
+						self.tryAgainTime = GetTimeEX();
+						ClearTarget();
+					end 
+				end
+				
+			end	
+			self.usingQuestItem = true;
+			return true;
+		end	
+	end
+	self.usingQuestItem = false;
 	return false;
 end
 
-function sig_scripts:isTargetingGroup(y) 
--- usage:
--- local result, pguiD =  sig_scripts:isTargetingGroup(EnemyObject);
+-- USE ITEM ON OBJECT IN RANGE
+function sig_scripts:usequestItem(range)
 
-	for i = 1, GetNumPartyMembers() do
-		local partyMember = GetPartyMember(i);
-		if (partyMember ~= nil and partyMember ~= 0 and not partyMember:IsDead()) then
-			if (y:GetUnitsTarget() ~= nil and y:GetUnitsTarget() ~= 0 and not script_grind:isTargetingPet(y)) then
-				return y:GetUnitsTarget():GetGUID() == partyMember:GetGUID(),  partyMember;
-			end
-		end
+	if (self.useitemTime > GetTimeEX()) then
+		return true;
 	end
-
-	return false, nil;
+	
+	local questItemName = script_follow.questItemName;
+	local lista = { strsplit(',', script_follow.objectiveName) };
+	local objTarget = 0;
+	-- local lista = {'Dying Kodo','Ancient Kodo','Aged Kodo',};
+	for i, unitname in ipairs(lista) do 
+		
+		local teste = sig_scripts:getTargetInRangeByName(unitname, range);
+		if (teste ~= 0 and teste ~= nil) then
+			objTarget = teste;
+			-- ClearTarget();
+			-- TargetByName(objTarget:GetUnitName());
+			break;
+		else
+			objTarget = 0;
+		end
+	end	
+	
+	if (objTarget ~= 0 and objTarget ~= nil and not script_grind:isTargetBlacklisted(objTarget:GetGUID())) then
+		if(questItemName ~= 'None')then
+			-- Follow
+			if (objTarget:GetDistance() > 2) then
+				local x, y, z = objTarget:GetPosition();
+				script_nav:moveToTarget(GetLocalPlayer(), x, y, z);
+			else 
+				
+				-- Stop Move
+				if(IsMoving()) then
+					StopMoving();
+				end
+				
+				-- Sets waittime before blacklist node Default:7000
+				if (GetTimeEX() > self.tryAgainTime) then
+					self.tryAgainTime = GetTimeEX() + 10000;
+				end
+				
+				-- UseItem
+				if (GetTimeEX() > self.tryAgainTime - 9000) then
+					
+					if (script_follow.ptLeader ~= nil and script_follow.ptLeader ~= 0) then
+						ClearTarget();
+						AssistByName(script_follow.ptLeader:GetUnitName());
+					end
+					-- TargetByName(objTarget:GetUnitName(), true);
+					sig_scripts:UseContainerItemByName(questItemName);
+					self.useitemTime = GetTimeEX() + 1000;
+					DEFAULT_CHAT_FRAME:AddMessage(objTarget:GetUnitName());
+				end	
+				
+				-- Try move back 
+				if (GetTimeEX() > self.tryAgainTime - 8000) then
+					-- script_follow:runBackwards(objTarget, 1);
+				end
+				
+				
+				-- Blacklist target
+				if (GetTimeEX() > self.tryAgainTime - 1000) then
+					-- Blacklist target
+					if (not script_grind:isTargetBlacklisted(objTarget:GetGUID())) then
+						self.message = 'Blackliting ' .. objTarget:GetGUID() .. ' Name: ' .. objTarget:GetUnitName();
+						script_grind:addTargetToBlacklist(objTarget:GetGUID()); 
+						self.tryAgainTime = GetTimeEX();
+						ClearTarget();
+					end 
+				end
+				
+			end	
+			self.usingQuestItem = true;
+			return true;
+		end	
+	end
+	self.usingQuestItem = false;
+	return false;
 end
 
-function sig_scripts:needTaunt(range)
+function sig_scripts:needTaunt(range) -- return a object in ranger if attacking group memeber and not targeting me. Return: OBJECT
 	local currentObj, typeObj = GetFirstObject(); 
 	while currentObj ~= 0 do 
 		
-		local result, pguiD =  sig_scripts:isTargetingGroup(currentObj);
+		local result =  script_grind:isTargetingGroup(currentObj);
     	
 		if (typeObj == 3 and not currentObj:IsDead()) then
 			if (currentObj:GetDistance() < range and result and not script_follow:isTargetingMe(currentObj)) then 
@@ -187,7 +326,23 @@ function sig_scripts:needTaunt(range)
        	end
         currentObj, typeObj = GetNextObject(currentObj); 
     end
-    return 0;
+    return nil;
+end
+
+function sig_scripts:isAttakingGroup() -- Return a object is attacking group Return: OBJECT
+	local currentObj, typeObj = GetFirstObject(); 
+	while currentObj ~= 0 do 
+		
+		local result =  script_grind:isTargetingGroup(currentObj);
+    	
+		if (typeObj == 3 and not currentObj:IsDead()) then
+			if (result) then 
+				return currentObj;
+			end 
+       	end
+        currentObj, typeObj = GetNextObject(currentObj); 
+    end
+    return nil;
 end
 
 -- DISTANCE FUNCTIONS

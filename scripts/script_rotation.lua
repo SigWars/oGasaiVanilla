@@ -20,6 +20,10 @@ script_rotation = {
 	isSetup = false
 }
 
+------------------------------------------------------------------------------------------------------------------------
+-- REMOVE OR EDIT SM_Extended from supermacro addon folder!!!!otherwise it will autopassloot and do alot of others fings
+------------------------------------------------------------------------------------------------------------------------
+
 function script_rotation:setup()
 	script_helper:setup();
 	script_gather:setup();
@@ -32,7 +36,7 @@ function script_rotation:window()
 
 	EndWindow();
 
-	if(NewWindow("Logitech's Rotation", 320, 300)) then 
+	if(NewWindow("Rotation", 320, 300)) then 
 		script_rotation:menu(); 
 	end
 end

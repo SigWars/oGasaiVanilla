@@ -452,16 +452,61 @@ function script_mage:rest()
 
 	local localObj = GetLocalPlayer();
 	local localMana = localObj:GetManaPercentage();
+	local localManaValor = localObj:GetMana();
 	local localHealth = localObj:GetHealthPercentage();
+	local waterQuantity = 0;
+	local manaMin = 0;
+	local plrLevel = localObj:GetLevel(); -- UnitLevel("player") or 0;
+	
+	if (plrLevel >= 4 and plrLevel < 10) then -- Rank 1
+		manaMin = 60;
+	elseif (plrLevel >=	10 and plrLevel < 20) then -- Rank 2
+		manaMin = 105;
+	elseif (plrLevel >=	20 and plrLevel < 30) then -- Rank 3
+		manaMin = 180;
+	elseif (plrLevel >=	30 and plrLevel < 40) then -- Rank 4
+		manaMin = 285;	
+	elseif (plrLevel >=	40 and plrLevel < 50) then -- Rank 5
+		manaMin = 420;
+	elseif (plrLevel >=	50 and plrLevel < 60) then -- Rank 6
+		manaMin = 585;
+	elseif (plrLevel == 60) then -- Rank 7
+		manaMin = 780;
+	end
 
 	--Create Water
 	local waterIndex = -1;
 	for i=0,self.numWater do
 		if (HasItem(self.water[i])) then
 			waterIndex = i;
+			waterQuantity = sig_scripts:GetItemQuantity(self.water[i]);
 			break;
 		end
 	end
+	
+	-- Water quantity min
+	if (waterIndex ~= -1 and HasSpell('Conjure Water') and waterQuantity < 20 and localManaValor > manaMin and not IsDrinking() and not IsEating()) then 
+		self.message = "Conjuring water...";
+		if (IsMoving()) then
+			StopMoving();
+			return true;
+		end
+		if (not IsStanding()) then
+				StopMoving();
+			return true;
+		end
+		if(IsMounted()) then 
+			DisMount(); 
+		end
+		if (localMana > 10 and not IsDrinking() and not IsEating() and not AreBagsFull()) then
+			if (HasSpell('Conjure Water')) then
+				CastSpellByName('Conjure Water')
+				return true;
+			end
+		end
+	end
+	
+	
 	
 	if (waterIndex == -1 and HasSpell('Conjure Water')) then 
 		self.message = "Conjuring water...";

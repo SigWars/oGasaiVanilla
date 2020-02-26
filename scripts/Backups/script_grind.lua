@@ -115,7 +115,7 @@ end
 
 function script_grind:window()
 	EndWindow();
-	if(NewWindow("Logitech's Grinder", 320, 300)) then script_grindMenu:menu(); end
+	if(NewWindow("Grinder", 320, 300)) then script_grindMenu:menu(); end
 end
 
 function script_grind:setWaitTimer(ms)

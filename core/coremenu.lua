@@ -44,17 +44,17 @@ function coremenu:draw()
 			----------------------------
 		]]--
 	
-		LoadScript("Sig's Grinder", "scripts\\script_grind.lua");
-		AddScriptToMode("Sig's Grinder", "script_grind");
+		LoadScript("Grinder", "scripts\\script_grind.lua");
+		AddScriptToMode("Grinder", "script_grind");
 
-		LoadScript("Sig's Follower", "scripts\\script_follow.lua");
-		AddScriptToMode("Sig's Follower", "script_follow");
+		LoadScript("Follower", "scripts\\script_follow.lua");
+		AddScriptToMode("Follower", "script_follow");
 		
-		LoadScript("Sig's Follower OP", "scripts\\script_followOP.lua");
-		AddScriptToMode("Sig's Follower OP", "script_followOP");
+		LoadScript("Follower OP", "scripts\\script_followOP.lua");
+		AddScriptToMode("Follow Out of Party", "script_followOP");
 
-		LoadScript("Sig's Rotation", "scripts\\script_rotation.lua");
-		AddScriptToMode("Sig's Rotation", "script_rotation");
+		LoadScript("Rotation", "scripts\\script_rotation.lua");
+		AddScriptToMode("Rotation", "script_rotation");
 
 		LoadScript("Fishing", "scripts\\script_fish.lua");
 		AddScriptToMode("Fishing", "script_fish");

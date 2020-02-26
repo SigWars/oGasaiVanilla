@@ -86,7 +86,7 @@ end
 
 function script_followOP:window()
 	if (self.isChecked) then EndWindow();
-		if(NewWindow("Logitech's Follower", 320, 300)) then script_followEXOP:menu(); end
+		if(NewWindow("Follower OP", 320, 300)) then script_followEXOP:menu(); end
 	end
 end
 

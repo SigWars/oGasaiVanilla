@@ -903,7 +903,7 @@ function script_grind:getSkinTarget(lootRadius)
 end
 
 function script_grind:menu()
-	if (CollapsingHeader("[Logitech's Grinder - Options ")) then
+	if (CollapsingHeader("[Grinder - Options ")) then
 		local wasClicked = false;
 		Text("Path options:");
 		wasClicked, self.autoPath = Checkbox("Auto pathing (disable if you wanna use walk path)", self.autoPath);
