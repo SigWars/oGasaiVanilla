@@ -1,4 +1,5 @@
 script_runner = {
+		ignoreCombat = false,
         nRcombo = 0, -- selected destination number (combo box)
         runit = false, 
         distDestination = 0,
@@ -256,12 +257,14 @@ function script_runner:setup()
 	self.genTimer = GetTimeEX();
 	self.avoidTimer = GetTimeEX();
 	-- Add Destinations
-	script_runner:addDestination("Tanaris Avoid Demo Start", -7288.0126953125, -3773.5656738281, 9.1952447891235, 1, 440);
-	script_runner:addDestination("Tanaris Avoid Demo Stop", -7427.31, -3759.38, 11.87, 10.79, 1, 440);
+	script_runner:addDestination("Orgrimmar - City", 1620.57, -4433.01, 11.07, 1, 1637);
+	script_runner:addDestination("Orgrimmar - Cleft of Shadow", 1831.1, -4352.74, -14.87, 0, 0);
+	script_runner:addDestination("Orgrimmar - Valley of Honor", 1924.17, -4671.3, 29.71, 0, 0);
 	script_runner:addDestination("Razor Hill - Durator", 323.82, -4736.34, 9.80, 1, 14);
-	script_runner:addDestination("Orgrimmar - Durator", 1620.57, -4433.01, 11.07, 1, 1637);
 	script_runner:addDestination("The Crossroads - The Barrens", -433.57, -2651.16, 95.96, 1, 17);
 	script_runner:addDestination("Camp Taurajo - The Barrens", -2356.23, -1964.11, 96.06, 1, 17);
+	script_runner:addDestination("Tanaris Avoid Demo Start", -7288.0126953125, -3773.5656738281, 9.1952447891235, 1, 440);
+	script_runner:addDestination("Tanaris Avoid Demo Stop", -7427.31, -3759.38, 11.87, 10.79, 1, 440);
 	script_runner:addDestination("Brackenwall Village - Dustwallow Marsh", -3154.01, -2900.93, 33.83, 0, 0);
 	script_runner:addDestination("Splintertree Post - Ashenvale", 2324.94, -2546.02, 101.05, 1, 331);
 	script_runner:addDestination("Bloodvenom Post - Felwood", 5105.07, -353.01, 357.25, 1, 361);
@@ -294,7 +297,7 @@ function script_runner:setup()
 	script_runner:addDestination("Nighthaven - Moonglade", 7945.57, -2577.50, 489.92, 1, 493);
 	script_runner:addDestination("Ratchet - The Barrens", -1028.38, -3669.89, 22.95, 1, 17);
 	script_runner:addDestination("Solliden Farmstead", 2396.95, 1525.47, 32.06, 0, 0);
-	script_runner:addDestination("Shadowfang Keep", -231.34, 1572.06, 76.89, 0, 0);
+	script_runner:addDestination("Shadowfang Keep", -230.34, 1572.06, 76.89, 0, 0);
 	script_runner:addDestination("Desolace - Ghost Walker Post", -1232.25, 1725.04, 89.9, 0, 0);
 
 	self.isSetup = true;
@@ -378,6 +381,20 @@ function script_runner:run()
 		self.endcombatWait = GetTimeEX() + 5000;
 	-- 	self.pathChangeCombat = true;
 	end
+	
+	----------------------------------------------------------
+	--  					BREATH TODO:					--
+	----------------------------------------------------------
+	script_follow.breathTime = ((GetTimeEX()-script_follow.notBreathTime)/1000);
+	--[[
+	if (script_follow.breathTime > 50.000) then
+		while (script_follow.breathTime > 1.000) do
+			JumpOrAscendStart();
+			return;
+		end	
+		
+	end
+	]]--
 
 	-- Update player coordinates
 	local localObj = GetLocalPlayer();
@@ -415,23 +432,38 @@ function script_runner:run()
 		end
 	end
 	
-	-- Grind enemyes on the way
-	if (script_follow:enemiesAttackingUs() >= 1 or script_follow:enemiesAttackingParty() >= 1) then
-		local combatError = 0;
+	
+	if (not GetLocalPlayer():IsDead()) then
+		-- Grind enemyes on the way
+		local combatError = nil;
 		local target = nil;
+		local foundTarget = sig_scripts:searchingTarget(70);
 		
-		if (GetTarget() ~= 0 and GetTarget() ~= nil) then
-				target = GetTarget();
-			if (target:CanAttack()) then
-				combatError = RunCombatScript(target:GetGUID());
+		if (script_grind:enemiesAttackingUs() >= 1) then
+			
+			if (GetTarget() ~= 0 and GetTarget() ~= nil) then
+					target = GetTarget();
+				if (target:CanAttack()) then
+					
+				else
+					target = nil;
+					combatError = nil;
+				end
+			end
+		else
+			if (foundTarget ~= nil and foundTarget ~= 0) then
+				target = foundTarget;
 			else
 				target = nil;
-				combatError = nil;
 			end
 		end
+			
 		
-		if (script_follow:enemiesAttackingParty() >= 1) then
-			target = sig_scripts:isAttakingGroup();
+		
+		
+		-- Run the combat script and retrieve combat script status if we have a valid target
+		if (target ~= nil and target ~= 0) then
+			combatError = RunCombatScript(target:GetGUID());
 		end
 		
 		if(target ~= nil and target ~= 0) then
@@ -473,7 +505,7 @@ function script_runner:run()
 			-- Stop bot, request from a combat script
 			if(combatError == 6) then rP("Combat script request stop bot..."); Logout(); StopBot(); return; end
 		end
-		
+			
 	end
 	
 	-- if (GetTimeEX() > self.endcombatWait) then
@@ -489,7 +521,7 @@ function script_runner:run()
 		return;
 	end
 	
-	if (self.pathChangeCombat and IsInCombat()) then
+	if (self.pathChangeCombat and IsInCombat() and not self.ignoreCombat) then
 		return;
 	end
 	
@@ -557,9 +589,12 @@ function script_runner:run()
 	end
 
 	-- Move to the next node in the path
-	if(not IsInCombat()) then
+	if (self.ignoreCombat) then
+		Move(_ix, _iy, _iz);
+	elseif(not IsInCombat()) then
 		Move(_ix, _iy, _iz);
 	end
+	
 end
 
 function script_runner:menu()
@@ -585,6 +620,8 @@ function script_runner:menu()
 			else
 				if Button("Stop running") then
 					StopMoving();
+					ClearPath(5);
+					self.pathChangeCombat = true;
 					self.runit = false;
 				end
 			end
@@ -614,6 +651,7 @@ function script_runner:menu()
 
 		local wasClicked = false;
 		wasClicked, self.avoidAggro = Checkbox("Avoid Aggro", self.avoidAggro);
+		SameLine(); wasClicked, self.ignoreCombat = Checkbox("Ingonore Combat", self.ignoreCombat);
 		wasClicked, self.drawCicles = Checkbox("Show Aggro Cicles", self.drawCicles);
 		Text("Safe Distance to Mobs: " .. self.safeDistance);
 		SameLine();

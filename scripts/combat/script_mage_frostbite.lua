@@ -25,7 +25,8 @@ script_mage = {
 	waitTimer = 0,
 	useWand = false,
 	gemTimer = 0,
-	isChecked = true
+	isChecked = true,
+	runAway = false
 }
 
 function script_mage:window()
@@ -210,10 +211,12 @@ function script_mage:run(targetGUID)
 	-- Assign the target 
 	targetObj =  GetGUIDObject(targetGUID);
 
+	--[[
 	if(targetObj == 0 or targetObj == nil or targetObj:IsDead()) then
 		ClearTarget();
 		return 2;
 	end
+	]]--
 
 	-- Check: Do nothing if we are channeling, casting or Ice Blocked
 	if (IsChanneling() or IsCasting() or localObj:HasBuff('Ice Block') or self.waitTimer > GetTimeEX()) then
@@ -221,24 +224,28 @@ function script_mage:run(targetGUID)
 	end
 
 	--Valid Enemy
-	if (targetObj ~= 0 and targetObj ~= nil) then
+	if (targetObj ~= 0 and targetObj ~= nil and targetObj:CanAttack()) then
 		
+		--[[
 		-- Cant Attack dead targets
 		if (targetObj:IsDead() or not targetObj:CanAttack()) then
 			ClearTarget();
 			return 2;
 		end
+		]]--
 		
 		if (not IsStanding()) then
 			StopMoving();
 		end
 
 		-- Don't attack if we should rest first
+		--[[
 		if ((localHealth < self.eatHealth or localMana < self.drinkMana) and not script_grind:isTargetingMe(targetObj)
 			and not targetObj:IsFleeing() and not targetObj:IsStunned() and not script_mage:isAddPolymorphed()) then
 			self.message = "Need rest...";
 			return 4;
 		end
+		]]--
 
 		targetHealth = targetObj:GetHealthPercentage();
 
@@ -248,12 +255,14 @@ function script_mage:run(targetGUID)
 		end
 
 		-- Check: if we target player pets/totems
+		--[[
 		if (GetTarget() ~= nil and targetObj ~= nil) then
 			if (UnitPlayerControlled("target") and GetTarget() ~= localObj) then 
 				script_grind:addTargetToBlacklist(targetObj:GetGUID());
 				return 5; 
 			end
 		end 
+		]]--
 		
 		-- Opener
 		if (not IsInCombat()) then
@@ -330,7 +339,7 @@ function script_mage:run(targetGUID)
 			end
 			
 			-- Check: Move backwards if the target is affected by Frost Nova or Frost Bite
-			if (targetHealth > 10 and (targetObj:HasDebuff("Frostbite") or targetObj:HasDebuff("Frost Nova")) and not localObj:HasBuff('Evocation') and targetObj ~= 0 and IsInCombat()) then
+			if (self.runAway and targetHealth > 10 and (targetObj:HasDebuff("Frostbite") or targetObj:HasDebuff("Frost Nova")) and not localObj:HasBuff('Evocation') and targetObj ~= 0 and IsInCombat()) then
 				if (script_mage:runBackwards(targetObj, 7)) then -- Moves if the target is closer than 7 yards
 					self.message = "Moving away from target...";
 					CastSpellByName("Frost Nova");
@@ -485,7 +494,7 @@ function script_mage:rest()
 	end
 	
 	-- Water quantity min
-	if (waterIndex ~= -1 and HasSpell('Conjure Water') and waterQuantity < 20 and localManaValor > manaMin and not IsDrinking() and not IsEating()) then 
+	if (waterIndex ~= -1 and HasSpell('Conjure Water') and waterQuantity < 40 and localManaValor > manaMin and not IsDrinking() and not IsEating()) then 
 		self.message = "Conjuring water...";
 		if (IsMoving()) then
 			StopMoving();
@@ -690,6 +699,7 @@ function script_mage:menu()
 		Separator();
 		Text('Skills options:');
 		wasClicked, self.useWand = Checkbox("Use Wand", self.useWand);
+		wasClicked, self.runAway = Checkbox("Run Back", self.runAway);
 		wasClicked, self.useFireBlast = Checkbox("Use Fire Blast", self.useFireBlast);
 		wasClicked, self.useManaShield = Checkbox("Use Mana Shield", self.useManaShield);
 		wasClicked, self.polymorphAdds = Checkbox("Polymorph Adds", self.polymorphAdds);

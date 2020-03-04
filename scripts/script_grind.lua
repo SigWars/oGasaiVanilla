@@ -23,7 +23,7 @@ script_grind = {
 	maxLevel = GetLocalPlayer():GetLevel()+1,
 	ressDistance = 34,
 	combatError = 0,
-	autoTalent = true,
+	autoTalent = false,
 	myX = 0,
 	myY = 0,
 	myZ = 0,
@@ -294,7 +294,7 @@ function script_grind:run()
 
 		if(self.enemyObj ~= nil or IsInCombat()) then
 			if (IsInCombat()) then
-				self.endCombatTime = GetTimeEX() + 10000;
+				self.endCombatTime = GetTimeEX() + 5000;
 			end
 			self.message = "Running the combat script...";
 			-- In range: attack the target, combat script returns 0
@@ -646,6 +646,13 @@ function script_grind:doLoot(localObj)
 	-- Loot checking/reset target
 	if (GetTimeEX() > self.lootCheck['timer']) then
 		if (self.lootCheck['target'] == self.lootObj:GetGUID()) then
+			if (self.lootObj ~= nil) then
+				if (dist <= 2) then 
+					if (not script_grind:isTargetBlacklisted(self.lootObj:GetGUID())) then
+						script_grind:addTargetToBlacklist(self.lootObj:GetGUID());
+					end
+				end
+			end
 			self.lootObj = nil; -- reset lootObj
 			ClearTarget();
 			self.message = 'Reseting loot target...';
@@ -705,6 +712,7 @@ function script_grind:doLoot(localObj)
 	script_grind:setWaitTimer(100);
 	if (self.lootObj:GetDistance() < 3) then self.waitTimer = GetTimeEX() + 450; end
 end
+
 
 function script_grind:getSkinTarget(lootRadius)
 	local targetObj, targetType = GetFirstObject();

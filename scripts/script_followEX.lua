@@ -4,57 +4,152 @@ script_followEX = {
 }
 
 function script_followEX:drawStatus()
-	if (script_follow.drawPath) then script_nav:drawPath(); end
-	if (script_follow.drawGather) then script_gather:drawGatherNodes(); end
-	if (script_follow.drawUnits) then script_nav:drawUnitsDataOnScreen(); end
-	-- color
-	local r, g, b = 255, 255, 0;
-	-- position
-	local y, x, width = 120, 25, 370;
-	local tX, tY, onScreen = WorldToScreen(GetLocalPlayer():GetPosition());
-	if (onScreen) then
-		y, x = tY-25, tX+75;
+	if (script_follow.drawDebug) then
+	
+		if (script_follow.drawPath) then script_nav:drawPath(); end
+		if (script_follow.drawGather) then script_gather:drawGatherNodes(); end
+		if (script_follow.drawUnits) then script_nav:drawUnitsDataOnScreen(); end
+		-- color
+		local r, g, b = 255, 255, 0;
+		-- position
+		local y, x, width = 120, 25, 370;
+		local tX, tY, onScreen = WorldToScreen(GetLocalPlayer():GetPosition());
+		if (onScreen) then
+			y, x = tY-25, tX+75;
+		end
+		DrawRect(x - 10, y - 5, x + width, y + 140, 255, 255, 0,  1, 1, 1);
+		DrawRectFilled(x - 10, y - 5, x + width, y + 140, 0, 0, 0, 160, 0, 0);
+		
+		--[[
+		if (script_follow:GetPartyLeaderObject() ~= 0) then
+			DrawText('[Follower - Range: ' .. math.floor(script_follow.followDistance) .. ' yd. ' .. 
+					'Master target: ' .. script_follow:GetPartyLeaderObject():GetUnitName(), x-5, y-4, r, g, b) y = y + 15;
+		else
+			DrawText('[Follower - Follow range: ' .. math.floor(script_follow.followDistance) .. ' yd. ' .. 
+					'Master target: ' .. '', x-5, y-4, r, g, b) y = y + 15;
+		end 
+		]]--
+		
+		local time = ((GetTimeEX()-script_follow.notBreathTime)/1000);
+		DrawText('Breath-Timer: ' .. math.floor(time) .. ' s.', x+200, y, 0, 255, 255);
+		
+		DrawText('Follow Status: ', x, y, 255, 255, 255); y = y + 13; 
+		DrawText(script_follow.message or "error", x, y, 255, 255, 0); y = y + 14;
+		
+		DrawText('Movement Status: ', x, y, 255, 255, 255); y = y + 13;
+		DrawText(sig_scripts.movementmessage or "error", x, y, 0, 255, 0); y = y + 12; 
+		
+		DrawText('Combat script status: ', x, y, 255, 255, 255);y = y + 25;
+		RunCombatDraw();
+		
+		DrawText('Loot status: ', x, y, 255, 255, 255); y = y + 15;
+		y = y + 0; DrawText(sig_scripts.lootmessage or "error", x, y, 255, 0, 255);y = y + 15;
+		
+		DrawText('Sig Debug: ', x, y, 255, 255, 255); y = y + 15;
+		y = y + 0; DrawText(sig_scripts.message or "error", x, y, 255, 102, 102);
+		
+		if (script_follow.lootCheck['timer'] == nil) then
+			script_follow.lootCheck['target'] = 0;
+			script_follow.lootCheck['timer'] = 0;
+		end
+		DrawText('Blacklist: ' .. math.max(0, script_follow.lootCheck['timer']-GetTimeEX()) .. ' ms.', x+200, y-45, 255, 255, 255);
+		-- DrawText('IsLooting: ' .. tostring(IsLooting()), x+200, y-35, 255, 255, 255);
+	
+		
+		
+		local down, up, lagHome, lagWorld = GetNetStats();
+		local xxx, yyy, zzz = GetLocalPlayer():GetPosition();
+		local aaa = GetLocalPlayer():GetAngle();
+		local cx, cy, cz, ctime = GetTerrainClick();
+		local islootable = false;
+		if (GetLocalPlayer():GetUnitsTarget() ~= nil and GetLocalPlayer():GetUnitsTarget() ~= 0) then
+			islootable = GetLocalPlayer():GetUnitsTarget():IsLootable();
+		else 
+			islootable = false;
+		end
+		y = y - 320;
+		DrawRect(x - 10, y - 5, x + width, y + 185, 255, 255, 0,  1, 1, 1);
+		DrawRectFilled(x - 10, y - 5, x + width, y + 185, 0, 0, 0, 160, 0, 0);
+		-- Angle
+		DrawText('Angle:', x, y, 255, 255, 255);
+		DrawText(math.floor(aaa), x+50, y, 0, 255, 0); y = y + 15;
+		-- Position
+		DrawText('Postition: ', x, y, 255, 255, 255);
+		DrawText('X:' .. math.floor(xxx) .. ' Y:' .. math.floor(yyy) .. ' Z:' .. math.floor(zzz), x+80, y, 0, 255, 0); y = y + 15;
+		
+		DrawText('Click: ', x, y, 255, 255, 255);
+		DrawText('X:' .. math.floor(cx) .. ' Y:' .. math.floor(cy) .. ' Z:' .. math.floor(cz), x+80, y, 0, 255, 0); y = y + 15; 
+		
+		-- is looting
+		DrawText('IsLooting:', x, y, 255, 255, 255);
+		if (IsLooting()) then
+			DrawText(tostring(IsLooting()), x+80, y, 0, 255, 0); y = y + 15;
+		else
+			DrawText(tostring(IsLooting()), x+80, y, 255, 0, 0); y = y + 15;
+		end
+		-- is lootable
+		DrawText('IsLootable:', x, y, 255, 255, 255);
+		if (islootable) then
+			DrawText(tostring(islootable), x+80, y, 0, 255, 0); y = y + 15;
+		else
+			DrawText(tostring(islootable), x+80, y, 255, 0, 0); y = y + 15;
+		end
+		-- indoors
+		DrawText('IsIndoors:', x, y, 255, 255, 255);
+		if (IsIndoors()) then
+			DrawText(tostring(IsIndoors()), x+80, y, 0, 255, 0); y = y + 15;
+		else
+			DrawText(tostring(IsIndoors()), x+80, y, 255, 0, 0); y = y + 15;
+		end
+		-- navmesh
+		DrawText('UsingNavsh:', x, y, 255, 255, 255);
+		if (IsUsingNavmesh()) then
+			DrawText(tostring(IsUsingNavmesh()), x+80, y, 0, 255, 0); y = y + 15;
+		else
+			DrawText(tostring(IsUsingNavmesh()), x+80, y, 255, 0, 0); y = y + 15;
+		end
+		
+		-- Swiing
+		DrawText('IsSwimming:', x, y, 255, 255, 255);
+		if (IsSwimming()) then
+			DrawText(tostring(IsSwimming()), x+80, y, 0, 255, 0); y = y + 15;
+		else
+			DrawText(tostring(IsSwimming()), x+80, y, 255, 0, 0); y = y + 15;
+		end
+		
+		-- lootable items
+		DrawText('Lootable items:', x, y, 255, 255, 255);
+		DrawText(GetNumLootItems() or 0, x+110, y, 0, 255, 0); y = y + 15;
+		
+		-- Party Leader
+		DrawText('Party Leader:', x, y, 255, 255, 255);
+		local leader = nil;
+		if (script_follow.ptLeaderExist) then 
+			DrawText(tostring(script_follow.ptLeader:GetUnitName()), x+110, y, 0, 255, 0); y = y + 15;
+		else
+			DrawText("Nil", x+110, y, 0, 255, 0); y = y + 15;
+		end
+		
+		-- Near Elevator
+		DrawText('Near elevators:', x, y, 255, 255, 255);
+		if (script_follow.nearElevator) then
+			DrawText(tostring(script_follow.nearElevator), x+110, y, 0, 255, 0); y = y + 15;
+		else
+			DrawText(tostring(script_follow.nearElevator), x+110, y, 255, 0, 0); y = y + 15;
+		end
+		--local teste = GetUnitName("mouseover");
+		-- DrawText(tostring(teste), x+110, y, 0, 255, 0); y = y + 15;
+		
+		
+		-- latency
+		DrawText('Latency: '..lagHome..' ms.', x, y, 255, 255, 255); y = y + 15;
+		
+		
 	end
-	DrawRect(x - 10, y - 5, x + width, y + 140, 255, 255, 0,  1, 1, 1);
-	DrawRectFilled(x - 10, y - 5, x + width, y + 140, 0, 0, 0, 160, 0, 0);
-	
-	--[[
-	if (script_follow:GetPartyLeaderObject() ~= 0) then
-		DrawText('[Follower - Range: ' .. math.floor(script_follow.followDistance) .. ' yd. ' .. 
-			 	'Master target: ' .. script_follow:GetPartyLeaderObject():GetUnitName(), x-5, y-4, r, g, b) y = y + 15;
-	else
-		DrawText('[Follower - Follow range: ' .. math.floor(script_follow.followDistance) .. ' yd. ' .. 
-			 	'Master target: ' .. '', x-5, y-4, r, g, b) y = y + 15;
-	end 
-	]]--
-	
-	local time = ((GetTimeEX()-script_follow.notBreathTime)/1000);
-	DrawText('Breath-Timer: ' .. math.floor(time) .. ' s.', x+200, y, 0, 255, 255);
-	
-	DrawText('Follow Status: ', x, y, 255, 255, 255); y = y + 13; 
-	DrawText(script_follow.message or "error", x, y, 255, 255, 0); y = y + 14;
-	
-	DrawText('Movement Status: ', x, y, 255, 255, 255); y = y + 13;
-	DrawText(sig_scripts.movementmessage or "error", x, y, 0, 255, 0); y = y + 12; 
-	
-	DrawText('Combat script status: ', x, y, 255, 255, 255);y = y + 25;
-	RunCombatDraw();
-	
-	DrawText('Loot status: ', x, y, 255, 255, 255); y = y + 15;
-	y = y + 0; DrawText(sig_scripts.lootmessage or "error", x, y, 255, 0, 255);y = y + 15;
-	
-	DrawText('Sig Debug: ', x, y, 255, 255, 255); y = y + 15;
-	y = y + 0; DrawText(sig_scripts.message or "error", x, y, 255, 102, 102);
-	
-	if (script_follow.lootCheck['timer'] == nil) then
-		script_follow.lootCheck['timer'] = 0;
-	end
-	DrawText('Blacklist: ' .. math.max(0, script_follow.lootCheck['timer']-GetTimeEX()) .. ' ms.', x+200, y-45, 255, 255, 255);
 
 	
 end
 
---[[
 function script_grindEX:doLoot(localObj)
 	local _x, _y, _z = script_follow.lootObj:GetPosition();
 	local dist = script_follow.lootObj:GetDistance();
@@ -62,6 +157,13 @@ function script_grindEX:doLoot(localObj)
 	-- Loot checking/reset target
 	if (GetTimeEX() > script_follow.lootCheck['timer']) then
 		if (script_follow.lootCheck['target'] == script_follow.lootObj:GetGUID()) then
+			if (script_follow.lootObj ~= nil) then
+				if (dist <= 2) then 
+					if (not script_grind:isTargetBlacklisted(script_follow.lootObj:GetGUID())) then
+						script_grind:addTargetToBlacklist(script_follow.lootObj:GetGUID());
+					end
+				end
+			end
 			script_follow.lootObj = nil; -- reset lootObj
 			ClearTarget();
 			sig_scripts.lootmessage = 'Reseting loot target...';
@@ -89,112 +191,37 @@ function script_grindEX:doLoot(localObj)
 		end
 		
 		-- If we reached the loot object, reset the nav path
-		script_nav:resetNavigate();
+		-- script_nav:resetNavigate();
 
 		-- Dismount
 		if (IsMounted()) then DisMount(); script_follow.waitTimer = GetTimeEX() + 450; return;  end
-
-		if(not script_follow.lootObj:UnitInteract() and not IsLooting()) then
-			script_follow.waitTimer = GetTimeEX() + 950;
-			return;
-		end
-		if (not LootTarget()) then
-			script_follow.waitTimer = GetTimeEX() + 650;
-			return;
-		else
-			script_follow.lootObj = nil;
-			script_follow.waitTimer = GetTimeEX() + 450;
-			return;
-		end
-	end
-	sig_scripts.movementmessage = "Moving to loot...";		
-	script_nav:moveToTarget(localObj, _x, _y, _z);	
-	script_grind:setWaitTimer(100);
-	if (script_follow.lootObj:GetDistance() < 3) then script_follow.waitTimer = GetTimeEX() + 450; end
-end
-]]--
-
-function script_grindEX:doLoot(localObj)
-	--[[
-	if (script_follow.lootObj == nil or script_follow.lootObj == 0) then
-		return;
-	end
-	]]--
-	
-	local _x, _y, _z = script_follow.lootObj:GetPosition();
-	local dist = script_follow.lootObj:GetDistance();
-	
-	
-
-	-- Add mpore time if is resting or other
-	if (script_follow.lootCheck['target'] == script_follow.lootObj:GetGUID()) then
-		if (IsCasting() or IsChanneling() or IsDrinking() or IsEating() or IsInCombat() or script_follow:enemiesAttackingParty() > 0 or RunRestScript() or script_follow.lootObj:GetDistance() > 3) then
-			if (GetTimeEX() > script_follow.lootCheck['timer']) then
-				script_follow.lootCheck['timer'] = GetTimeEX() + 10000; -- 10 sec
-				if (script_follow.lootObj ~= nil) then 
-					script_follow.lootCheck['target'] = script_follow.lootObj:GetGUID();
-				else
-					script_follow.lootCheck['target'] = 0;
-				end
-				return;
-			end	
-		end	
-	end
-	
-	-- Loot checking/reset target
-	if (GetTimeEX() > script_follow.lootCheck['timer']) then
-	
-		-- Add to blacklist
-		if (script_follow.lootCheck['target'] == script_follow.lootObj:GetGUID() and script_follow.lootObj:GetDistance() < 3) then
-			-- script_follow.waitTimer = GetTimeEX() + 2000;
-			script_grind:addTargetToBlacklist(script_follow.lootObj:GetGUID());
-			script_follow.lootObj = nil; -- reset lootObj
-			ClearTarget();
-			CloseLoot();
-			sig_scripts.lootmessage = 'Reseting loot target...';
-			return;
-		end
 		
-		-- sets new check time
-		script_follow.lootCheck['timer'] = GetTimeEX() + 5000; -- 10 sec
-		if (script_follow.lootObj ~= nil) then 
-			script_follow.lootCheck['target'] = script_follow.lootObj:GetGUID();
-		else
-			script_follow.lootCheck['target'] = 0;
-		end
-		
-		return;
-	end
-
-	if(dist <= script_follow.lootDistance) then
-		sig_scripts.lootmessage = "Looting " .. script_follow.lootObj:GetGUID() .. "...";
-		if(IsMoving() and not localObj:IsMovementDisabed()) then
-			StopMoving();
-			script_follow.waitTimer = GetTimeEX() + 450;
-			return;
-		end
-		if(not IsStanding()) then
-			StopMoving();
-			script_follow.waitTimer = GetTimeEX() + 450;
-			return;
-		end
-		
-		-- If we reached the loot object, reset the nav path
-		script_nav:resetNavigate();
-
-		-- Dismount
-		if (IsMounted()) then DisMount(); script_follow.waitTimer = GetTimeEX() + 450; return;  end
-
-		if(not script_follow.lootObj:UnitInteract() and not IsLooting()) then
-			script_follow.waitTimer = GetTimeEX() + 950;
-			return;
-		end
-		-- Sucess on loot
+		-- local lootmethod, masterlooterPartyID, masterlooterRaidID = GetLootMethod();		
+		-- prevents not stuck in loot for bugged servers
 		if (script_follow.lootCheck['target'] == script_follow.lootObj:GetGUID()) then
-				sig_scripts.lootmessage = "End Loot " .. script_follow.lootObj:GetGUID() .. "...";
-				-- script_follow.lootCheck['timer'] = GetTimeEX() + 3000;
-		end
+			if (IsLooting()) then
+				if (GetNumLootItems() == 0) then
+					-- Blacklist target
+					if (script_follow.lootObj ~= nil) then
+						if (not script_grind:isTargetBlacklisted(script_follow.lootObj:GetGUID())) then
+							script_grind:addTargetToBlacklist(script_follow.lootObj:GetGUID());
+						end
+					end
+					-- script_follow.waitTimer = GetTimeEX() + 650;
+					
+					sig_scripts.lootmessage = "0 items to loot, Blacklisting..";
+					CloseLoot();
+					ClearTarget();
+					return;
+				end
+			end
+		end	
+
 		
+		if(not script_follow.lootObj:UnitInteract() and not IsLooting()) then
+			script_follow.waitTimer = GetTimeEX() + 950;
+			return;
+		end
 		if (not LootTarget()) then
 			script_follow.waitTimer = GetTimeEX() + 650;
 			return;
@@ -204,21 +231,18 @@ function script_grindEX:doLoot(localObj)
 			return;
 		end
 	end
-
-	-- Blacklist loot target if swimming or we are close to aggro blacklisted targets and not close to loot target
-	--[[if (script_follow.lootObj ~= nil) then
-		if (IsSwimming() or (script_aggro:closeToBlacklistedTargets() and script_follow.lootObj:GetDistance() > 5)) then
-			script_grind:addTargetToBlacklist(script_follow.lootObj:GetGUID());
-			DEFAULT_CHAT_FRAME:AddMessage('script_grind: Blacklisting loot target to avoid aggro/swimming...');
-			return;
-		end
-	end]]--
 	sig_scripts.lootmessage = "Moving to loot...";		
-	script_nav:moveToTarget(localObj, _x, _y, _z);	
+	script_follow:moveToTarget(localObj, _x, _y, _z);
 	script_grind:setWaitTimer(100);
 	if (script_follow.lootObj:GetDistance() < 3) then script_follow.waitTimer = GetTimeEX() + 450; end
 end
 
+function script_followEX:sigmenu()
+	local wasClicked = false;
+	wasClicked, script_follow.squadmode = Checkbox('Squad', script_follow.squadmode);
+	SameLine(); wasClicked, script_follow.autoFollow = Checkbox("AutoFollow", script_follow.autoFollow);
+	SameLine(); wasClicked, script_follow.drawDebug = Checkbox('Dbg', script_follow.drawDebug);
+end
 
 function script_followEX:menu()
 
@@ -230,6 +254,9 @@ function script_followEX:menu()
 	else if (Button("Resume Bot")) then script_follow.myTime = GetTimeEX(); script_follow.pause = false; end end
 	SameLine(); if (Button("Reload Scripts")) then coremenu:reload(); end
 	SameLine(); if (Button("Exit Bot")) then StopBot(); end 
+	SameLine(); wasClicked, script_follow.drawDebug = Checkbox('Dbg', script_follow.drawDebug);
+	wasClicked, script_follow.squadmode = Checkbox('Squad', script_follow.squadmode);
+	SameLine(); wasClicked, script_follow.autoFollow = Checkbox("AutoFollow", script_follow.autoFollow);
 	
 	Separator();
 	Text("FOLLOW OPTIONS:");
@@ -237,7 +264,7 @@ function script_followEX:menu()
 
 		if (CollapsingHeader("[Follower - Basic Options")) then
 			wasClicked, script_follow.enableGather = Checkbox("Gatgher professions  ", script_follow.enableGather);
-			SameLine(); wasClicked, script_follow.autoFollow = Checkbox("AutoFollow", script_follow.autoFollow);
+			-- SameLine(); wasClicked, script_follow.autoFollow = Checkbox("AutoFollow", script_follow.autoFollow);
 			wasClicked, script_follow.gatherForQuest = Checkbox("Gather for quests    ", script_follow.gatherForQuest);
 			SameLine();wasClicked, script_follow.autoTalent = Checkbox("Auto Talent", script_follow.autoTalent);
 			wasClicked, script_follow.useQuestItem = Checkbox("Use Quest Item       ", script_follow.useQuestItem);
@@ -269,6 +296,7 @@ function script_followEX:menu()
 			Text("#### ESPECIFICS ####");
 			Text("Name of pet Healed/Assited - Preiest Heals and Warrior Taunts");
 			script_follow.PetName = InputText("Party pet name", script_follow.PetName);
+			script_follow.HealerName = InputText("Healer name", script_follow.HealerName);
 			script_follow.minFollowDist  = SliderInt("Minimal Follow Distance", 5, 25, script_follow.minFollowDist);
 			script_follow.maxFollowDist  = SliderInt("Maximun Follow Distance", 5, 25, script_follow.maxFollowDist);
 			-- script_follow.minFollowDist = InputText("Minimal Follow Distance", script_follow.minFollowDist);

@@ -356,10 +356,17 @@ function script_gather:gatherquest()
 	if (not sig_scripts:isAreaNearTargetSafe(self.nodeObj)) then
 		-- sig_scripts.message = 'Object found but not safe!';
 		self.isGatheringQuest = false;
+		self.nodeObj = nil
 		return false;
 	end
 	
+	if (sig_scripts:isAttakingGroup() ~= nil) then
+		self.isGatheringQuest = false;
+		self.nodeObj = nil
+		return false; 
+	end
 	
+	-- sig_scripts.message = 'Object State: ' .. tostring(self.nodeObj:GetObjectState());
 		
 	if(self.nodeObj ~= nil and self.nodeObj ~= 0) then
 		if (GetTimeEX() > self.timer) then
@@ -394,7 +401,7 @@ function script_gather:gatherquest()
 				-- if (_x ~= 0) then
 				if (dist > self.lootDistance) then
 					sig_scripts.message = 'Moving to quest obejective...';
-					script_nav:moveToNav(GetLocalPlayer(), _x, _y, _z);
+					script_follow:moveToTarget(GetLocalPlayer(), _x, _y, _z);
 					self.timer = GetTimeEX() + 150;
 				end
 				-- end

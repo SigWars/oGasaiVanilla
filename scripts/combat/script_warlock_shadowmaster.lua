@@ -198,12 +198,14 @@ function script_warlock:run(targetGUID)
 		end
 
 		-- Check: if we target player pets/totems
+		--[[
 		if (GetTarget() ~= nil and targetObj ~= nil) then
 			if (UnitPlayerControlled("target") and GetTarget() ~= localObj) then 
 				script_grind:addTargetToBlacklist(targetObj:GetGUID());
 				return 5; 
 			end
 		end 
+		]]--
 
 		-- Check: When channeling, cancel Health Funnel when low HP
 		if (hasPet) then

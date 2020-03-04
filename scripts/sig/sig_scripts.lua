@@ -9,7 +9,8 @@ sig_scripts = {
 	debuffableCurses = {"Course1","Course2"},
 	useitemTime = GetTimeEX(),
 	tryAgainTime = GetTimeEX(),
-	usingQuestItem = false
+	usingQuestItem = false,
+	rotationRunning = false,
 }
 --------------------
 -- BAG SCRIPTS
@@ -37,7 +38,7 @@ function sig_scripts:GetItemQuantity(search)
   end
   return itemCount;
 end
-		
+
 --------------------
 -- Count tables to get total number of intem inside
 function sig_scripts:countTable(stringTable)
@@ -140,9 +141,10 @@ function sig_scripts:searchingTarget(range)
 	while g ~= 0 do
 		if ((targetType == 3 or targetType == 4) and not g:IsCritter() and not g:IsDead() and g:CanAttack() and g:GetDistance() < range) then
 			if (
-				 script_grind:isTargetingMe(i) or
+				 script_grind:isTargetingMe(g) or
 				 script_grind:isTargetingGroup(g) or
-				 script_grind:isTargetingPet(i)
+				 script_grind:isTargetingPet(g) or
+				 script_follow:isTargetMasterPet(g)
 				) then
 				sig_scripts.message = "Target:" .. tostring(g:GetUnitName()) .. " Found At:" .. math.floor(g:GetDistance()).. " Yrd's";
 				return g;
@@ -319,8 +321,8 @@ function sig_scripts:needTaunt(range) -- return a object in ranger if attacking 
 		
 		local result =  script_grind:isTargetingGroup(currentObj);
     	
-		if (typeObj == 3 and not currentObj:IsDead()) then
-			if (currentObj:GetDistance() < range and result and not script_follow:isTargetingMe(currentObj)) then 
+		if (result and typeObj == 3 and not currentObj:IsDead()) then
+			if (currentObj:GetDistance() < range and not script_follow:isTargetingMe(currentObj)) then 
 				return currentObj;
 			end 
        	end
@@ -338,6 +340,28 @@ function sig_scripts:isAttakingGroup() -- Return a object is attacking group Ret
 		if (typeObj == 3 and not currentObj:IsDead()) then
 			if (result) then 
 				return currentObj;
+			end 
+       	end
+        currentObj, typeObj = GetNextObject(currentObj); 
+    end
+    return nil;
+end
+
+function sig_scripts:isAttakingHealer() -- Return a object is attacking group Return: OBJECT
+	local currentObj, typeObj = GetFirstObject();
+	local result = false;
+	local objTarget = nil;
+	while currentObj ~= 0 do 
+		
+		if (typeObj == 3) then
+			result =  script_grind:isTargetingGroup(currentObj);
+			objTarget = currentObj:GetUnitsTarget();
+			if (result and not currentObj:IsDead()) then 
+				if (objTarget ~= nil and objTarget ~= 0) then
+					if (objTarget:GetUnitName() == script_follow.HealerName) then
+						return currentObj;
+					end
+				end
 			end 
        	end
         currentObj, typeObj = GetNextObject(currentObj); 

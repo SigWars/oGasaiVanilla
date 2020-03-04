@@ -13,11 +13,12 @@ script_rotation = {
 	navFunctionsLoaded = include("scripts\\script_nav.lua"),
 	helperLoaded = include("scripts\\script_helper.lua"),
 	sigs = include("scripts\\sig\\sig_scripts.lua"),
-	drawEnabled = true,
+	drawEnabled = false,
 	drawAggro = false,
 	drawGather = false,
 	drawUnits = false,
-	isSetup = false
+	autoRepop = false,
+	isSetup = false,
 }
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -72,29 +73,40 @@ function script_rotation:run()
 	
 	-- Corpse-walk if we are dead
 	if(localObj:IsDead()) then
-		self.message = "Walking to corpse...";
-		-- Release body
-		if(not IsGhost()) then RepopMe(); self.waitTimer = GetTimeEX() + 5000; return; end
-		-- Ressurrect within the ress distance to our corpse
-		local _lx, _ly, _lz = localObj:GetPosition();
-		if(GetDistance3D(_lx, _ly, _lz, GetCorpsePosition()) > self.ressDistance) then
-			script_nav:moveToNav(localObj, GetCorpsePosition());
-			return;
-		else
-			if (script_aggro:safeRess(_lx, _ly, _lz, self.ressDistance)) then
-				script_follow.message = "Finding a safe spot to ress...";
-				return true;
+			self.message = "Dead...";
+			-- Release body
+			if (self.autoRepop) then
+				if(not IsGhost()) then 
+					RepopMe(); 
+					self.waitTimer = GetTimeEX() + 5000; 
+					return;
+				end
 			end
-			RetrieveCorpse();
+			 
+			if (IsGhost())then
+				self.message = "Walking to corpse...";
+				-- Ressurrect within the ress distance to our corpse
+				local _lx, _ly, _lz = localObj:GetPosition();
+				if(GetDistance3D(_lx, _ly, _lz, GetCorpsePosition()) > self.ressDistance) then
+					script_nav:moveToNav(localObj, GetCorpsePosition());
+					return;
+				else
+					if (script_aggro:safeRess(_lx, _ly, _lz, self.ressDistance)) then
+						script_follow.message = "Finding a safe spot to ress...";
+						return true;
+					end
+					RetrieveCorpse();
+				end
+			end	
+			return;
 		end
-		return;
-	end
 	
 	if (not localObj:IsDead()) then
 		
 		self.enemyObj = GetTarget();		
 
 		if(self.enemyObj ~= 0) then
+			sig_scripts.rotationRunning = true;
 
 			-- Auto dismount if in range
 			if (IsMounted()) then 
@@ -127,6 +139,7 @@ function script_rotation:run()
 			end
 
 			self.message = "Waiting for a target...";
+			sig_scripts.rotationRunning = false;
 	
 			return;
 		end
@@ -169,10 +182,6 @@ function script_rotation:draw()
 		script_nav:drawUnitsDataOnScreen(); 
 	end
 
-	if (not self.drawEnabled) then 
-		return; 
-	end
-
 	-- color
 	local r, g, b = 255, 255, 0;
 
@@ -180,17 +189,96 @@ function script_rotation:draw()
 	local y, x, width = 120, 25, 370;
 	local tX, tY, onScreen = WorldToScreen(GetLocalPlayer():GetPosition());
 	if (onScreen) then
-		y, x = tY-25, tX+75;
+		-- y, x = tY, tX;
+		y, x = tY+200, tX+200;
 	end
-
+	
+	DrawText('Taunting: ' .. tostring(script_warrior.isTaunting), x, y, 255, 255, 255); y = y + 20;
+	
+	if (not self.drawEnabled) then 
+		return;
+	end
+	
 	-- info
 	if (not self.pause) then
 		DrawRect(x - 10, y - 5, x + width, y + 80, 255, 255, 0,  1, 1, 1);
 		DrawRectFilled(x - 10, y - 5, x + width, y + 80, 0, 0, 0, 60, 0, 0);
-		DrawText('[Rotation - by Logitech', x-5, y-4, r, g, b) y = y + 15;
+		DrawText('[Rotation - by SigWar', x-5, y-4, r, g, b) y = y + 15;
 		DrawText('Script Idle: ' .. math.max(0, math.floor(self.timer-GetTimeEX())) .. ' ms.', x, y, 255, 255, 255); y = y + 20;
+		
 		DrawText('Rotation status: ', x, y, r, g, b); y = y + 20;
-		DrawText(self.message or "error", x, y, 0, 255, 255);
+		DrawText(self.message or "error", x, y, 0, 255, 255); y = y + 30;
+		
+		local debug = true;
+		if (debug) then	
+			local down, up, lagHome, lagWorld = GetNetStats();
+			local xxx, yyy, zzz = GetLocalPlayer():GetPosition();
+			local aaa = GetLocalPlayer():GetAngle();
+			local cx, cy, cz, ctime = GetTerrainClick();
+			local islootable = false;
+			if (GetLocalPlayer():GetUnitsTarget() ~= nil and GetLocalPlayer():GetUnitsTarget() ~= 0) then
+				islootable = GetLocalPlayer():GetUnitsTarget():IsLootable();
+			else 
+				islootable = false;
+			end
+			y = y - 250;
+			DrawRect(x - 10, y - 5, x + width, y + 150, 255, 255, 0,  1, 1, 1);
+			DrawRectFilled(x - 10, y - 5, x + width, y + 150, 0, 0, 0, 160, 0, 0);
+			-- Angle
+			DrawText('Angle:', x, y, 255, 255, 255);
+			DrawText(math.floor(aaa), x+50, y, 0, 255, 0); y = y + 15;
+			-- Position
+			DrawText('Postition: ', x, y, 255, 255, 255);
+			DrawText('X:' .. math.floor(xxx) .. ' Y:' .. math.floor(yyy) .. ' Z:' .. math.floor(zzz), x+80, y, 0, 255, 0); y = y + 15;
+			
+			DrawText('Click: ', x, y, 255, 255, 255);
+			DrawText('X:' .. math.floor(cx) .. ' Y:' .. math.floor(cy) .. ' Z:' .. math.floor(cz), x+80, y, 0, 255, 0); y = y + 15; 
+			
+			-- is looting
+			DrawText('IsLooting:', x, y, 255, 255, 255);
+			if (IsLooting()) then
+				DrawText(tostring(IsLooting()), x+80, y, 0, 255, 0); y = y + 15;
+			else
+				DrawText(tostring(IsLooting()), x+80, y, 255, 0, 0); y = y + 15;
+			end
+			-- is lootable
+			DrawText('IsLootable:', x, y, 255, 255, 255);
+			if (islootable) then
+				DrawText(tostring(islootable), x+80, y, 0, 255, 0); y = y + 15;
+			else
+				DrawText(tostring(islootable), x+80, y, 255, 0, 0); y = y + 15;
+			end
+			-- indoors
+			DrawText('IsIndoors:', x, y, 255, 255, 255);
+			if (IsIndoors()) then
+				DrawText(tostring(IsIndoors()), x+80, y, 0, 255, 0); y = y + 15;
+			else
+				DrawText(tostring(IsIndoors()), x+80, y, 255, 0, 0); y = y + 15;
+			end
+			-- navmesh
+			DrawText('UsingNavsh:', x, y, 255, 255, 255);
+			if (IsUsingNavmesh()) then
+				DrawText(tostring(IsUsingNavmesh()), x+80, y, 0, 255, 0); y = y + 15;
+			else
+				DrawText(tostring(IsUsingNavmesh()), x+80, y, 255, 0, 0); y = y + 15;
+			end
+			
+			-- Swiing
+			DrawText('IsSwimming:', x, y, 255, 255, 255);
+			if (IsSwimming()) then
+				DrawText(tostring(IsSwimming()), x+80, y, 0, 255, 0); y = y + 15;
+			else
+				DrawText(tostring(IsSwimming()), x+80, y, 255, 0, 0); y = y + 15;
+			end
+			
+			-- lootable items
+			DrawText('Lootable items:', x, y, 255, 255, 255);
+			DrawText(GetNumLootItems() or 0, x+110, y, 0, 255, 0); y = y + 15;
+			
+			-- latency
+			DrawText('Latency: '..lagHome..' ms.', x, y, 255, 255, 255); y = y + 15;
+		end
+		
 	else
 		DrawText('Rotation paused by user...', x-5, y-4, r, g, b);
 	end

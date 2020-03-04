@@ -12,6 +12,10 @@ script_shaman = {
 	enhanceWeapon = 'Rockbiter Weapon',
 	totem = 'no totem yet',
 	totemBuff = '',
+	totem2 = 'no totem yet',
+	totemBuff2 = '',
+	totem3 = 'no totem yet',
+	totemBuff3 = '',
 	healingSpell = 'Healing Wave',
 	isChecked = true
 }
@@ -25,7 +29,7 @@ function script_shaman:setup()
 		self.enhanceWeapon = 'Flametongue Weapon';
 	end
 
-	-- Set totem
+	-- Set totem 1
 	if (HasSpell('Strength of Earth Totem') and HasItem('Earth Totem')) then
 		self.totem = 'Strength of Earth Totem';
 		self.totemBuff = 'Strength of Earth';
@@ -33,6 +37,18 @@ function script_shaman:setup()
 		self.totem = 'Grace of Air Totem';
 		self.totemBuff = 'Grace of Air';
 	end
+	
+	-- Set totem 2
+	if (HasSpell('Healing Stream Totem') and HasItem('Water Totem')) then
+		self.totem2 = 'Healing Stream Totem';
+		self.totemBuff2 = 'Healing Stream';
+	elseif (HasSpell('Mana Spring Totem') and HasItem('Water Totem')) then
+		self.totem2 = 'Mana Spring Totem';
+		self.totemBuff2 = 'Mana Spring';
+	
+	end
+	
+	
 
 	-- Set healing spell
 	if (HasSpell('Lesser Healing Wave')) then
@@ -194,12 +210,14 @@ function script_shaman:run(targetGUID)
 		targetHealth = targetObj:GetHealthPercentage();
 
 		-- Check: if we target player pets/totems
+		--[[
 		if (GetTarget() ~= nil and targetObj ~= nil) then
 			if (UnitPlayerControlled("target") and GetTarget() ~= localObj) then 
 				script_grind:addTargetToBlacklist(targetObj:GetGUID());
 				return 5; 
 			end
 		end
+		]]--
 		
 		-- Opener
 		if (not IsInCombat()) then
@@ -209,22 +227,34 @@ function script_shaman:run(targetGUID)
 			-- Dismount
 			if (IsMounted() and targetObj:GetDistance() < 25) then DisMount(); return 0; end
 
-			-- Check: Not in range
-			if (not targetObj:IsSpellInRange('Lightning Bolt')) then
-				return 3;
-			end
-
-			-- Check: If in range and in line of sight stop moving
-			if (targetObj:IsInLineOfSight() and IsMoving()) then
-				StopMoving(); 
+			-- Prior Heals
+			if (sig_helper:HealsAndBuffs()) then
 				return 0;
 			end
+			
+			if (GetNumPartyMembers() == 0) then
+				-- Check: Not in range
+				if (not targetObj:IsSpellInRange('Lightning Bolt')) then
+					return 3;
+				end
 
-			-- Pull with: Lighting Bolt
-			if (Cast("Lightning Bolt", targetObj)) then
-				self.waitTimer = GetTimeEX() + 4000;
-				return 0;
-			end
+				-- Check: If in range and in line of sight stop moving
+				if (targetObj:IsInLineOfSight() and IsMoving()) then
+					StopMoving(); 
+					return 0;
+				end
+			
+				-- Pull with: Lighting Bolt
+				if (Cast("Lightning Bolt", targetObj)) then
+					self.waitTimer = GetTimeEX() + 4000;
+					return 0;
+				end
+			else 
+				-- Auto Attack
+				if (targetObj:GetDistance() < 40) then
+					targetObj:AutoAttack();
+				end
+			end	
 			
 			-- Check move into meele range
 			if (targetObj:GetDistance() > self.meeleDistance or not targetObj:IsInLineOfSight()) then
@@ -233,6 +263,10 @@ function script_shaman:run(targetGUID)
 
 		-- Combat
 		else	
+			if (sig_helper:HealsAndBuffs()) then
+				return 0;
+			end
+			
 			self.message = "Killing " .. targetObj:GetUnitName() .. "...";
 			-- Dismount
 			if (IsMounted()) then DisMount(); end
@@ -281,6 +315,12 @@ function script_shaman:run(targetGUID)
 					return 0; 
 				end 
 			end
+			
+			-- Healer mode
+			-- Not use Spells if mana lower than valor 
+			if (localMana < 70) then
+				return 0;
+			end
 
 			-- Earth Shock
 			if (targetObj:IsCasting()) then
@@ -293,12 +333,18 @@ function script_shaman:run(targetGUID)
 			if (targetObj:GetDistance() < self.meeleDistance) then
 				targetObj:FaceTarget();
 
-				-- Totem
+				-- Totem 2
+				if (HasSpell(self.totem2) and not localObj:HasBuff(self.totemBuff2)) then
+					CastSpellByName(self.totem2);
+					-- self.waitTimer = GetTimeEX() + 1500;
+				end
+				
+				-- Totem 1
 				if (HasSpell(self.totem) and not localObj:HasBuff(self.totemBuff)) then
 					CastSpellByName(self.totem);
-					self.waitTimer = GetTimeEX() + 1500;
+					-- self.waitTimer = GetTimeEX() + 1500;
 				end
-
+				
 				-- Stormstrike
 				if (HasSpell('Stormstrike') and not IsSpellOnCD('Stormstrike')) then
 					if (Cast("Stormstrike", targetObj)) then

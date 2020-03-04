@@ -208,14 +208,15 @@ function script_rogue:run(targetGUID)
 			self.message = "Need rest...";
 			return 4;
 		end
-
+--[[
 		-- Check: if we target player pets/totems
 		if (GetTarget() ~= nil and targetObj ~= nil) then
 			if (UnitPlayerControlled("target") and GetTarget() ~= localObj) then 
 				script_grind:addTargetToBlacklist(targetObj:GetGUID());
 				return 5; 
 			end
-		end 
+		end
+]]--		
 		
 		-- Opener
 		if (not IsInCombat()) then

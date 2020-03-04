@@ -1,0 +1,22 @@
+objects_list_Horde = {
+'Taillasher Eggs'
+'Stolen Supply Sack'
+'Laden Mushroom'
+'Deepmoss Eggs'
+'Resonite Crystal'
+'Silithid Mound'
+'Troll Chest'
+'Warsong Oil'
+'Giant Softshell Clam'
+'Mudsnout Blossom'
+'Highperch Wyvern Egg'
+'Document Chest'
+'Incendia Agave'
+'Rocket Car Rubble'
+''
+''
+''
+''
+''
+
+}

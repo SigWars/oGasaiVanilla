@@ -139,6 +139,14 @@ function script_grindEX:doChecks()
 				ClearTarget();
 			end
 		end
+		-- Fix Loot stuck
+		if (not IsInCombat() and IsLooting()) then
+			if (GetNumLootItems() == 0) then
+				sig_scripts.lootmessage = "Fixed..";
+				CloseLoot();
+				ClearTarget();
+			end
+		end
 
 		if (not IsInCombat() and not localObj:HasBuff('Feign Death')) then
 			-- Move out of water before resting/mounting
