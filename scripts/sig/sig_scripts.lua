@@ -4,16 +4,80 @@ sig_scripts = {
 	lootmessage = "Waiting for new log",
 	combatmessage = "Waiting for new log",
 	movementmessage = "Waiting for new log",
-	
-	debuffableSpells = {"Spell1","Spell2"},
-	debuffableCurses = {"Course1","Course2"},
 	useitemTime = GetTimeEX(),
 	tryAgainTime = GetTimeEX(),
 	usingQuestItem = false,
 	rotationRunning = false,
+	usetaunt = true,
+	usemockingblow = false,
+	lastTargetGuid = GetLocalPlayer():GetGUID(),
+	tauntEnemy = GetLocalPlayer():GetGUID()
 }
---------------------
--- BAG SCRIPTS
+
+function sig_scripts:tauntInhealer()
+	------------------------
+	-- Taunt by SigWar
+	------------------------
+	local needTaunt = sig_scripts:isAttakingHealer(); -- Returne object is attacking healer by name in script_follow
+	if (needTaunt ~= nil and needTaunt ~= 0) then
+		
+		local needTauntGuid = needTaunt:GetGUID();
+		
+		
+		-- Check last target no more attaking healer before swap target
+		if (needTauntGuid ~= self.lastTargetGuid and not sig_scripts:isInHealerBool(self.lastTargetGuid)) then
+			self.lastTargetGuid = needTauntGuid;
+			self.tauntEnemy = needTaunt;
+			
+			-- Change target
+			ClearTarget();
+			self.tauntEnemy:TargetEnemy();
+		else
+			self.tauntEnemy = GetGUIDObject(self.lastTargetGuid);
+		end
+		
+		if (self.tauntEnemy ~= nil and self.tauntEnemy ~= 0) then
+			if (self.tauntEnemy:GetDistance() > 2.5) then
+				self.tauntEnemy:TargetEnemy();
+				local x,y,z = self.tauntEnemy:GetPosition();
+				script_follow:moveToTarget(localObj,x,y,z);
+				-- return 0;
+				return self.tauntEnemy;
+			end -- move to member
+
+			-- Mocking Blow
+			if (self.usemockingblow and HasSpell('Mocking Blow') and not IsSpellOnCD('Mocking Blow')) then
+				if (Cast('Mocking Blow', self.tauntEnemy)) then
+					return nil;
+				end
+			-- Taunt
+			elseif (self.usetaunt and HasSpell('Taunt')) then  -- and not IsSpellOnCD('Taunt') and localRageValor >= 5
+				if (self.tauntEnemy:GetDistance() <= 2.5) then
+					if (not localObj:HasBuff('Defensive Stance')) then CastSpellByName('Defensive Stance'); end
+				end
+				if (Cast('Taunt', self.tauntEnemy)) then
+					-- if (not localObj:HasBuff(self.combatStance)) then CastSpellByName(self.combatStance); end
+					return nil;
+				end
+			end
+		end
+	end
+	return nil;
+end
+
+function getCreaturebyName(target)
+
+	local creaturename = target:GetUnitName();
+	
+	for namelist in pairs(script_grind.creaturelist) do
+        --  Check to see if you have the buff:
+        if (namelist == creaturename) then
+            return true;
+        end
+    end
+	return false;
+end
+
 function sig_scripts:UseContainerItemByName(search)
   for bag = 0,4 do
     for slot = 1,GetContainerNumSlots(bag) do
@@ -39,8 +103,6 @@ function sig_scripts:GetItemQuantity(search)
   return itemCount;
 end
 
---------------------
--- Count tables to get total number of intem inside
 function sig_scripts:countTable(stringTable)
 	local counter = 0;
 	for index in pairs(self.stringTable) do
@@ -48,30 +110,7 @@ function sig_scripts:countTable(stringTable)
 	end
 	return counter
 end
----------------------
--- Debuffs
-function sig_scripts:isSpellDebuffable(spellName) 
-	for i=0,sig_scripts:countTable(self.debuffableSpells) do
-		if (spellName == self.debuffableSpells[i]) then
-			return true;
-		end
-	end
-	return false;
-end
 
-function sig_scripts:isCurseDebuffable(curseName)
-	for i=0,sig_scripts:countTable(self.debuffableCurses) do
-		if (curseName == self.debuffableCurses[i]) then
-			return true;
-		end
-	end
-	return false;
-end
-
-
-----------------------------------------
--- PARTY FUNCTIONS
-----------------------------------------
 function sig_scripts:GetPartyLeaderObject() -- Return a party lader Return: OBJECT
 	if GetNumPartyMembers() > 0 then -- are we in a party?
 		leaderObj = GetPartyMember(GetPartyLeaderIndex());
@@ -81,9 +120,7 @@ function sig_scripts:GetPartyLeaderObject() -- Return a party lader Return: OBJE
 	end
 	return 0;
 end
-----------------------------------------
--- AREA FUNCTIONS
-----------------------------------------
+
 function sig_scripts:isAreaNearTargetSafe(target) -- check if no will agro near the target Return: BOOL
 	local localObj = GetLocalPlayer();
 	local countUnitsInRange = 0;
@@ -111,10 +148,6 @@ function sig_scripts:isAreaNearTargetSafe(target) -- check if no will agro near 
 	return true;
 end
 
-
-----------------------------------------
--- TARGETING FUNCTIONS
-----------------------------------------
 function sig_scripts:getTargetInRangeByName(unitname, range) -- Return a target by the name and range Return: OBJECT
 	local targetObj, targetType = GetFirstObject();
 	local bestTarget = nil;
@@ -155,8 +188,6 @@ function sig_scripts:searchingTarget(range)
 	return nil;
 end
 
-
--- USE ITEM ON PT LEADER TARGET
 function sig_scripts:useItemLeaderTarget()
 
 	if (self.useitemTime > GetTimeEX()) then
@@ -164,9 +195,9 @@ function sig_scripts:useItemLeaderTarget()
 	end
 	
 	local questItemName = script_follow.questItemName;
-	local lista = { strsplit(',', script_follow.objectiveName) };
+	-- local lista = { strsplit(',', script_follow.objectiveName) };
 	local objTarget = 0;
-	-- local lista = {'Dying Kodo','Ancient Kodo','Aged Kodo',};
+	local lista = {'Dying Kodo','Ancient Kodo','Aged Kodo',};
 	for i, unitname in ipairs(lista) do 
 		local teste = script_follow.targetOfptLeader;
 		if (teste ~= 0 and teste ~= nil) then
@@ -234,7 +265,6 @@ function sig_scripts:useItemLeaderTarget()
 	return false;
 end
 
--- USE ITEM ON OBJECT IN RANGE
 function sig_scripts:usequestItem(range)
 
 	if (self.useitemTime > GetTimeEX()) then
@@ -369,7 +399,19 @@ function sig_scripts:isAttakingHealer() -- Return a object is attacking group Re
     return nil;
 end
 
--- DISTANCE FUNCTIONS
+function sig_scripts:isInHealerBool(targetGuid) -- Return boll if passed GUID is attacking healer: BOOL
+	local target = GetGUIDObject(targetGuid);
+	if (target ~= nil and target ~= 0) then
+		local targetofTarget = target:GetUnitsTarget();
+		if (targetofTarget ~= nil and targetofTarget ~= 0) then
+			if (targetofTarget:GetUnitName() == script_follow.HealerName) then
+				return true;
+			end
+		end
+	end	
+	return false;
+end
+
 function sig_scripts:CalculateDistance(unit,otherUnit)
 	local _lx, _ly, _lz = unit:GetPosition();
 	local _2x, _2y, _2z = otherUnit:GetPosition();
@@ -377,7 +419,6 @@ function sig_scripts:CalculateDistance(unit,otherUnit)
 	return Distance;
 end
 
---MISC FUNCTION NOT WORK
 function sig_scripts:IsUsableAction(SpellName) 
 	for z=1,172 do 
 		local isUsable, _ = IsUsableAction(z);
@@ -390,33 +431,6 @@ function sig_scripts:IsUsableAction(SpellName)
 	return false;
 end
 
--- core menu uses ti set base menu
-function sig_scripts:loadclass()
-	-- Load combat menu by class
-	local class = UnitClass("player");
-		if (class == 'Mage') then
-			script_mage:menu();
-		elseif (class == 'Hunter') then
-			script_hunter:menu();
-		elseif (class == 'Warlock') then
-			script_warlock:menu();
-		elseif (class == 'Paladin') then
-			script_paladin:menu();
-		elseif (class == 'Druid') then
-			script_druid:menu();
-		elseif (class == 'Priest') then
-			script_priest:menu();
-			script_priest_shadow:menu();
-		elseif (class == 'Warrior') then
-			script_warrior:menu();
-		elseif (class == 'Rogue') then
-			script_rogue:menu();
-		elseif (class == 'Shaman') then
-			script_shaman:menu();
-	end
-end
-
--- teste
 function sig_scripts:setRegenVar()
 	if (GetNumPartyMembers() > 1) then
 		return 1;
@@ -473,50 +487,3 @@ function sig_scripts:randomgatherMsg()
 		return "ai sim";		
 	end
 end
-
-function sig_scripts:coreloadclass()
-		-- add to core menu
-		local class = UnitClass("player");
-		
-		if (class == 'Mage') then
-			LoadScript("Frostbite - Mage", "scripts\\combat\\script_mage_frostbite.lua");
-			AddScriptToCombat("Frostbite - Mage", "script_mage");
-			
-		elseif (class == 'Hunter') then
-			LoadScript("Beastmaster - Hunter", "scripts\\combat\\script_hunter_beastmaster.lua");
-			AddScriptToCombat("Beastmaster - Hunter", "script_hunter");
-			
-		elseif (class == 'Warlock') then
-			LoadScript("Shadowmaster - Warlock", "scripts\\combat\\script_warlock_shadowmaster.lua");
-			AddScriptToCombat("Shadowmaster - Warlock", "script_warlock");
-			
-		elseif (class == 'Paladin') then
-			LoadScript("Ret - Paladin", "scripts\\combat\\script_paladin_ret.lua");
-			AddScriptToCombat("Ret - Paladin", "script_paladin");
-			
-		elseif (class == 'Druid') then
-			LoadScript("Feral - Druid", "scripts\\combat\\script_druid_feral.lua");
-			AddScriptToCombat("Feral - Druid", "script_druid");
-			
-		elseif (class == 'Priest') then
-			-- Discipline
-			LoadScript("Disc - Priest", "scripts\\combat\\script_priest_disc.lua");
-			AddScriptToCombat("Disc - Priest", "script_priest");
-			-- Shadow
-			LoadScript("Shadow - Priest", "scripts\\combat\\script_priest_shadow.lua");
-			AddScriptToCombat("Shadow - Priest", "script_priest_shadow");
-			
-		elseif (class == 'Warrior') then
-			LoadScript("Fury - Warrior", "scripts\\combat\\script_warrior_fury.lua");
-			AddScriptToCombat("Fury - Warrior", "script_warrior");
-			
-		elseif (class == 'Rogue') then
-			LoadScript("Hidden - Rogue", "scripts\\combat\\script_rogue_hidden.lua");
-			AddScriptToCombat("Hidden - Rogue", "script_rogue");
-			
-		elseif (class == 'Shaman') then
-			LoadScript("Enhance - Shaman", "scripts\\combat\\script_shaman_enhance.lua");
-			AddScriptToCombat("Enhance - Shaman", "script_shaman");
-	end
-
-end	

@@ -318,7 +318,7 @@ function script_shaman:run(targetGUID)
 			
 			-- Healer mode
 			-- Not use Spells if mana lower than valor 
-			if (localMana < 70) then
+			if (localMana <= 40) then
 				return 0;
 			end
 
@@ -344,11 +344,13 @@ function script_shaman:run(targetGUID)
 					CastSpellByName(self.totem);
 					-- self.waitTimer = GetTimeEX() + 1500;
 				end
-				
-				-- Stormstrike
-				if (HasSpell('Stormstrike') and not IsSpellOnCD('Stormstrike')) then
-					if (Cast("Stormstrike", targetObj)) then
-						return 0;
+			
+				if (GetNumPartyMembers() == 0) then
+					-- Stormstrike
+					if (HasSpell('Stormstrike') and not IsSpellOnCD('Stormstrike')) then
+						if (Cast("Stormstrike", targetObj)) then
+							return 0;
+						end
 					end
 				end
 			end

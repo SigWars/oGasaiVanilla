@@ -5,7 +5,7 @@ script_rotation = {
 	tickRate = 200,
 	combatError = 0,
 	ressDistance = 25,
-	message = 'Rotation by Logitech',
+	message = 'Rotation by SigWar',
 	enemyObj = 0,
 	pause = false,
 	aggroLoaded = include("scripts\\script_aggro.lua"),
@@ -43,6 +43,7 @@ function script_rotation:window()
 end
 
 function script_rotation:run()
+
 	
 	if (not self.isSetup) then 
 		script_rotation:setup(); 
@@ -190,10 +191,19 @@ function script_rotation:draw()
 	local tX, tY, onScreen = WorldToScreen(GetLocalPlayer():GetPosition());
 	if (onScreen) then
 		-- y, x = tY, tX;
-		y, x = tY+200, tX+200;
+		y, x = tY+100, tX+200;
 	end
 	
-	DrawText('Taunting: ' .. tostring(script_warrior.isTaunting), x, y, 255, 255, 255); y = y + 20;
+	-- DrawText('Taunting: ' .. tostring(script_warrior.isTaunting), x, y, 255, 255, 255); y = y + 20;
+	local toltext = sig_globalVars:getLootTime();
+	DrawText('Loot Time: ' .. math.floor(toltext), x, y, 255, 255, 255); y = y + 20;
+	
+	local toltext = sig_globalVars:getCombatTime();
+	DrawText('Start Combat Time: ' .. math.floor(toltext), x, y, 255, 255, 255); y = y + 20;
+	
+	local toltext = sig_globalVars:getEndcombatTime();
+	DrawText('End Combat Time: ' .. math.floor(toltext), x, y, 255, 255, 255); y = y + 20;
+	 
 	
 	if (not self.drawEnabled) then 
 		return;
@@ -329,7 +339,7 @@ function script_rotation:menu()
 
 	Separator();
 
-	sig_scripts:loadclass();
+	coremenu:loadclass();
 
 	Text('Script tic rate (ms)');
 	self.tickRate = SliderInt("TR", 50, 500, self.tickRate);

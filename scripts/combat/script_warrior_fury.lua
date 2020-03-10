@@ -13,10 +13,6 @@ script_warrior = {
 	defensiveMode = true,
 	overpowerActionBarSlot = 72+5, -- Default: Overpower in slot 5 on the default Battle Stance Bar
 	useCharge = false,
-	usetaunt = true,
-	usemockingblow = false,
-	isTaunting = false,
-	
 }
 
 function script_warrior:window()
@@ -138,6 +134,7 @@ function script_warrior:run(targetGUID)
 	local localHealth = localObj:GetHealthPercentage();
 	local localLevel = localObj:GetLevel();
 	local localRageValor = localObj:GetRage();
+	local hasoffhandWeapon = OffhandHasWeapon();
 
 	if (localObj:IsDead()) then
 		return 0; 
@@ -202,7 +199,11 @@ function script_warrior:run(targetGUID)
 				script_grind:addTargetToBlacklist(targetObj:GetGUID());
 				return 5; 
 			end
-		end 
+		end
+
+		if (sig_scripts:tauntInhealer() ~= nil) then
+			return 4; -- Do nothing
+		end
 		
 		-- Opener
 		if (not IsInCombat()) then
@@ -232,14 +233,15 @@ function script_warrior:run(targetGUID)
 				and targetObj:GetDistance() > 12 and targetObj:IsInLineOfSight()) then
 				-- Dismount
 				if (IsMounted()) then DisMount(); return 0; end
+				if (not localObj:HasBuff('Battle Stance')) then CastSpellByName('Battle Stance'); end
 				if (Cast("Charge", targetObj)) then return 0; end
 			end	
 
 			-- Check move into meele range
-			if (targetObj:GetDistance() > self.meeleDistance or not targetObj:IsInLineOfSight() and not sig_scripts.rotationRunning and not self.isTaunting) then
+			if (targetObj:GetDistance() > self.meeleDistance or not targetObj:IsInLineOfSight() and not sig_scripts.rotationRunning) then
 				return 3;
 			end
-
+			
 		-- Combat
 		else	
 			self.message = "Killing " .. targetObj:GetUnitName() .. "...";
@@ -257,9 +259,9 @@ function script_warrior:run(targetGUID)
 			end
 
 			-- Check if we are in meele range
-			if (targetObj:GetDistance() > self.meeleDistance or not targetObj:IsInLineOfSight() and not sig_scripts.rotationRunning and not self.isTaunting) then
+			if (targetObj:GetDistance() > self.meeleDistance or not targetObj:IsInLineOfSight() and not sig_scripts.rotationRunning) then
 				return 3;
-			elseif (not sig_scripts.rotationRunning and not self.isTaunting) then
+			elseif (not sig_scripts.rotationRunning) then
 				if (IsMoving()) then StopMoving(); end
 			end
 
@@ -273,40 +275,6 @@ function script_warrior:run(targetGUID)
 				end 
 			end
 			
-			-- taunt
-			local tauntTarget = sig_scripts:isAttakingHealer(); -- or sig_scripts:isAttakingGroup();
-			if (tauntTarget ~= nil and tauntTarget ~= 0) then
-				local lasttarget = targetGUID;
-				if (self.usemockingblow and HasSpell('Mocking Blow') and not IsSpellOnCD('Mocking Blow') and localRageValor >= 10) then
-					self.isTaunting = true;
-					tauntTarget:TargetEnemy();
-					if (script_follow:moveInMeleeSight(tauntTarget)) then return 0; end -- move to member
-					if (Cast('Mocking Blow', tauntTarget)) then
-						-- if (GetTarget():GetGUID() ~= lasttarget) then targetObj =  GetGUIDObject(lasttarget); end
-						-- self.isTaunting = false;
-						return 0;
-					end
-				
-				elseif (self.usetaunt and HasSpell('Taunt') and not IsSpellOnCD('Taunt') and localRageValor >= 5) then
-					self.isTaunting = true;
-					if (script_follow:moveInMeleeSight(tauntTarget)) then return 0; end -- move to member
-					if (tauntTarget:GetDistance() <= 3) then
-						if (not localObj:HasBuff('Defensive Stance')) then CastSpellByName('Defensive Stance'); end
-					end
-					
-					if (Cast('Taunt', tauntTarget)) then
-						if (not localObj:HasBuff(self.combatStance)) then CastSpellByName(self.combatStance); end
-						-- if (GetTarget():GetGUID() ~= lasttarget) then targetObj =  GetGUIDObject(lasttarget); end
-						-- self.isTaunting = false;
-						return 0;
-					end
-				--else 
-				--	self.isTaunting = false;
-				end
-			elseif (tauntTarget == nil or tauntTarget == 0) then
-				self.isTaunting = false;
-			end
-				
 			-- Shield Bash
 			if (self.defensiveMode and targetObj:IsCasting() and HasSpell('Shield Bash') and not IsSpellOnCD('Shield Bash')) then
 				CastSpellByName('Shield Bash');
@@ -351,23 +319,29 @@ function script_warrior:run(targetGUID)
 
 				-- Defensive Stance/Tank options
 				if (localObj:HasBuff('Defensive Stance')) then
+					
+					-- Meele Skill: Rend if we got more than 10 rage
+					if (targetObj:GetCreatureType() ~= 'Mechanical' and targetObj:GetCreatureType() ~= 'Elemental' and HasSpell('Rend') and not targetObj:HasDebuff("Rend") 
+						and targetHealth > 30 and localRage >= 10) then 
+						if (Cast('Rend', targetObj)) then return 0; end 
+					end 
 				
 					-- Shield Block
-					if (HasSpell('Shield Block') and not IsSpellOnCD('Shield Block') and localRageValor >= 5) then
-						if (not localObj:HasBuff('Shield Block') and localRageValor >= 5) then
+					if (hasoffhandWeapon == nil and HasSpell('Shield Block') and not IsSpellOnCD('Shield Block') and localRageValor >= 5) then
+						if (not localObj:HasBuff('Shield Block') and localRageValor >= 10) then
 							CastSpellByName('Shield Block'); 
 							return 0; 
 						end	
 					end
 					
 					-- Revenge
-					if (HasSpell('Revenge') and not IsSpellOnCD('Revenge') and localRageValor >= 10) then
+					if (HasSpell('Revenge') and not IsSpellOnCD('Revenge') and localRageValor >= 5) then
 						if (Cast('Revenge', targetObj)) then 
 							return 0; 
 						end	
 					end
 					
-					-- Revenge
+					-- Sunder Armor
 					if (HasSpell('Sunder Armor') and not IsSpellOnCD('Sunder Armor') and localRageValor >= 15) then
 						if (Cast('Sunder Armor', targetObj) and targetObj:GetDebuffStacks('Sunder Armor') <= 3) then 
 							return 0; 
@@ -409,7 +383,7 @@ function script_warrior:run(targetGUID)
 				-- Meele Skill: Rend if we got more than 10 rage
 				if (targetObj:GetCreatureType() ~= 'Mechanical' and targetObj:GetCreatureType() ~= 'Elemental' and HasSpell('Rend') and not targetObj:HasDebuff("Rend") 
 					and targetHealth > 30 and localRage >= 10) then 
-					if (Cast('Rend', targetObj)) then return; end 
+					if (Cast('Rend', targetObj)) then return 0; end 
 				end 
 
 				-- Meele Skill: Heroic Strike if we got 15 rage
@@ -479,8 +453,8 @@ function script_warrior:menu()
 		Separator();
 		wasClicked, self.stopIfMHBroken = Checkbox("Stop bot if main hand is broken.", self.stopIfMHBroken);
 		wasClicked, self.defensiveMode = Checkbox("Defensive Mode", self.defensiveMode);
-		wasClicked, self.usetaunt = Checkbox("Taun Targets in healer", self.usetaunt);
-		wasClicked, self.usemockingblow = Checkbox("Mocking Blow", self.usemockingblow);
+		wasClicked, sig_scripts.usetaunt = Checkbox("Taun Targets in healer", sig_scripts.usetaunt);
+		wasClicked, sig_scripts.usemockingblow = Checkbox("Mocking Blow", sig_scripts.usemockingblow);
 		
 		wasClicked, self.useCharge = Checkbox("Use Charge", self.useCharge);
 		Text("Use Bloodrage above health percentage");

@@ -1,5 +1,5 @@
 script_follow = {
-	squadmode = false,
+	squadmode = true,
 	jump = false,
 	useMount = false,
 	disMountRange = 32,
@@ -29,16 +29,16 @@ script_follow = {
 	unstuckLoaded = include("scripts\\script_unstuck.lua"),
 	gatherLoaded = include("scripts\\script_gather.lua"),
 	talentLoaded = include("scripts\\script_talent.lua"),
-	sigScriptHelper = include("scripts\\sig_script_helper.lua"),
+	sigScriptHelper = include("scripts\\sig\\sig_script_helper.lua"),
 	enableGather = false,
 	gatherForQuest = true,
 	gatherQuestDistance = 40,
-	QuestObjectName1 = 'Incendia Agave',
+	QuestObjectName1 = 'Sack of Meat',
 	QuestObjectName2 = 'Rocket Car Rubble',
 	QuestObjectName3 = 'Number',
 	useQuestItem = false,
-	questItemName = "Foreman's Blackjack",
-	objectiveName = 'Lazy Peon,None',
+	questItemName = "Kodo Kombobulator",
+	objectiveName = 'Aged Kodo,Ancient Kodo',
 	drawGather = false,
 	nextToNodeDist = 4, -- (Set to about half your nav smoothness)
 	isSetup = false,
@@ -446,6 +446,7 @@ function script_follow:run()
 		-- Disable unstuck if Sqimming or Follow/Ignoring Attacks -> Feature to use ingame to move direct from you ignoring Elevations
 		if (not self.IgnoreAttacks and not IsSwimming() and not script_unstuck:pathClearAuto(2)) then
 			self.message = script_unstuck.message;
+			JumpOrAscendStart();
 			return;
 		end
 	end
@@ -662,6 +663,11 @@ function script_follow:run()
 		
 		if (sig_helper:HealsAndBuffsPets()) then
 			self.message = "Healing / Buff / Support Pets ";
+			return;
+		end
+		
+		if (sig_helper:classSpecifics()) then
+			self.message = "Class especific action ";
 			return;
 		end
 		
@@ -913,6 +919,11 @@ function script_follow:run()
 			end
 		end
 		
+		local isTaunting = sig_scripts:tauntInhealer();
+		if (HasSpell('Defensive Stance') and isTaunting ~= nil) then
+			self.enemyObj = isTaunting;
+		end
+		
 		----------------------------------------------------------
 		--				DISABLE TARGET FOR HEALERS				--
 		----------------------------------------------------------
@@ -932,11 +943,11 @@ function script_follow:run()
 		 
 		 --Shamman
 		 -- Check: If we are a priest and not do damage if Leader life below 70%
-		 if (HasSpell('Healing Wave') and self.ptLeaderExist and not self.ptLeader:IsDead() and self.ptLeader:GetHealthPercentage() < 70) then
-		 	self.enemyObj = nil;
-		 end
+		 --if (HasSpell('Healing Wave') and self.ptLeaderExist and not self.ptLeader:IsDead() and self.ptLeader:GetHealthPercentage() < 70 and localObj:GetHealthPercentage() > 50) then
+		 --	self.enemyObj = nil;
+		 --end
 		 -- Check: If we are a priest and we are at least 3 party members, dont do damage if mana below 90%
-		 if (HasSpell('Healing Wave') and GetNumPartyMembers() > 2 and GetLocalPlayer():GetManaPercentage() < 70) then
+		 if (HasSpell('Healing Wave') and GetNumPartyMembers() > 2 and localObj:GetHealthPercentage() > 50) then
 		 	self.enemyObj = nil;
 		 end
 		
@@ -1014,7 +1025,7 @@ function script_follow:run()
 		----------------------------------------------------------
 		--  					INTERACT						--
 		----------------------------------------------------------
-		if (self.ptLeaderExist and not IsInCombat() and not self.useQuestItem) then
+		if (self.ptLeaderExist and not IsInCombat() and not script_gather.isGatheringQuest) then -- and not self.useQuestItem
 			
 			local newTarget = self.ptLeader:GetUnitsTarget();
 			
@@ -1065,7 +1076,7 @@ function script_follow:run()
 		----------------------------------------------------------
 		
 		-- Follow our master
-		if (self.ptLeaderExist and not self.Interacting and self.autoFollow) then
+		if (self.ptLeaderExist and not self.Interacting and self.autoFollow and not script_gather.isGatheringQuest) then
 			if(self.ptLeader:GetDistance() > self.followDistance and not self.ptLeader:IsDead()) then
 				
 				local x, y, z = self.ptLeader:GetPosition();

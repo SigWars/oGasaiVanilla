@@ -458,6 +458,12 @@ function script_mage:rest()
 	if(not self.isSetup) then
 		script_mage:setup();
 	end
+	
+	if (IsSwimming()) then 
+		--script_nav:navigate(GetLocalPlayer());
+		--return true;
+		return false; 
+	end
 
 	local localObj = GetLocalPlayer();
 	local localMana = localObj:GetManaPercentage();

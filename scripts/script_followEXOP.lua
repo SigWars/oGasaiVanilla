@@ -100,7 +100,7 @@ function script_followEXOP:menu()
 	-- Load combat menu by class
 	local class = UnitClass("player");
 	
-	sig_scripts:loadclass();
+	coremenu:loadclass();
 	
 	
 

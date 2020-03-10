@@ -396,7 +396,7 @@ function script_gather:gatherquest()
 					self.timer = GetTimeEX() + 1000;
 				end
 				
-				self.isGatheringQuest = false;
+				-- self.isGatheringQuest = false;
 			else
 				-- if (_x ~= 0) then
 				if (dist > self.lootDistance) then

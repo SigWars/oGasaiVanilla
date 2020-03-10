@@ -1,4 +1,13 @@
 script_grind = {
+	playerinRangename = 'No',
+	killbyname = false,
+	creaturelist = {
+    ["Scorpid Reaver"] = true,
+    ["Scorpid Terror"] = true,
+    ["Next mob"] = true,
+	["Salt Flats Scavenger"] = true,
+	["Salt Flats Vulture"] = true,
+	},
 	jump = false,
 	useVendor = true,
 	repairWhenYellow = true,
@@ -181,7 +190,7 @@ function script_grind:run()
 			return;
 		end
 		if (script_grind:playersWithinRange(self.paranoidRange)) then
-			self.message = "Player(s) within paranoid range, pausing...";
+			self.message = "Player(s) within paranoid range, pausing... " .. self.playerinRangename;
 			ClearTarget();
 			return;
 		end
@@ -294,7 +303,7 @@ function script_grind:run()
 
 		if(self.enemyObj ~= nil or IsInCombat()) then
 			if (IsInCombat()) then
-				self.endCombatTime = GetTimeEX() + 5000;
+				self.endCombatTime = GetTimeEX() + 1000;
 			end
 			self.message = "Running the combat script...";
 			-- In range: attack the target, combat script returns 0
@@ -504,6 +513,24 @@ end
 
 function script_grind:enemyIsValid(i)
 	if (i ~= 0) then
+		
+		-- Kill only creatures in de list
+		if (self.killbyname)then
+			if (getCreaturebyName(i)) then 
+				return true;
+			
+			-- Valid Targets: Tapped by us, or is attacking us or our pet
+			elseif (script_grind:isTargetingMe(i)
+				or  script_follow:isTargetMasterPet(i)
+				or (script_grind:isTargetingPet(i) and (i:IsTappedByMe() or not i:IsTapped())) 
+				or (script_grind:isTargetingGroup(i) and (i:IsTappedByMe() or not i:IsTapped())) 
+				or (i:IsTappedByMe() and not i:IsDead())) then 
+					return true; 
+			else
+				return false;
+			end
+		end
+		
 		-- Valid Targets: Tapped by us, or is attacking us or our pet
 		if (script_grind:isTargetingMe(i)
 			or  script_follow:isTargetMasterPet(i)
@@ -571,6 +598,7 @@ function script_grind:playersWithinRange(range)
 		if (currentObj:GetDistance() < range) then 
 			local localObj = GetLocalPlayer();
 			if (localObj:GetGUID() ~= currentObj:GetGUID()) then
+						self.playerinRangename = currentObj:GetUnitName();
                 		return true;
 			end
                 end 
@@ -684,6 +712,25 @@ function script_grind:doLoot(localObj)
 
 		-- Dismount
 		if (IsMounted()) then DisMount(); self.waitTimer = GetTimeEX() + 450; return;  end
+		
+		-- prevents not stuck in loot for bugged servers
+		if (self.lootCheck['target'] == self.lootObj:GetGUID()) then
+			if (IsLooting()) then
+				if (GetNumLootItems() == 0) then
+					-- Blacklist target
+					if (self.lootObj ~= nil) then
+						if (not script_grind:isTargetBlacklisted(self.lootObj:GetGUID())) then
+							script_grind:addTargetToBlacklist(self.lootObj:GetGUID());
+						end
+					end
+					
+					sig_scripts.lootmessage = "0 items to loot, Blacklisting..";
+					CloseLoot();
+					ClearTarget();
+					return;
+				end
+			end
+		end	
 
 		if(not self.lootObj:UnitInteract() and not IsLooting()) then
 			self.waitTimer = GetTimeEX() + 950;

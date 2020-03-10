@@ -660,6 +660,7 @@ function script_runner:menu()
 		if Button("-") then self.safeDistance = self.safeDistance - 1; end
 
 		Separator()
+		coremenu:loadclass();
 	-- end
 end
 

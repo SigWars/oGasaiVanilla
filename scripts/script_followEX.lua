@@ -317,7 +317,7 @@ function script_followEX:menu()
 
 		Separator();
 		Separator();
-		sig_scripts:loadclass();
+		coremenu:loadclass();
 		
 		if (script_follow.enableGather)then
 			script_gather:menu();

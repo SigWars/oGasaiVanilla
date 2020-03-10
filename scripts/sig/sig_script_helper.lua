@@ -1,6 +1,26 @@
 sig_helper = {
 	-- sig scripts
+	debuffableSpells = {"Spell1","Spell2"},
+	debuffableCurses = {"Course1","Course2"}
 }
+
+function sig_helper:isSpellDebuffable(spellName) 
+	for i=0,sig_scripts:countTable(self.debuffableSpells) do
+		if (spellName == self.debuffableSpells[i]) then
+			return true;
+		end
+	end
+	return false;
+end
+
+function sig_helper:isCurseDebuffable(curseName)
+	for i=0,sig_scripts:countTable(self.debuffableCurses) do
+		if (curseName == self.debuffableCurses[i]) then
+			return true;
+		end
+	end
+	return false;
+end
 
 function sig_helper:HealsAndBuffs()
 
@@ -9,8 +29,8 @@ local class = UnitClass("player");
 	local localMana = GetLocalPlayer():GetManaPercentage();
 	local manaValor = GetLocalPlayer():GetMana();
 	local localHath = GetLocalPlayer():GetHealthPercentage();
-	local LeaderGUID = script_follow.ptLeader;
-	
+	local leaderobject = script_follow.ptLeader; 
+		
 	if (not IsStanding()) then StopMoving(); end
 	-- Priest heal and buff
 	for i = 1, GetNumPartyMembers()+1 do
@@ -172,177 +192,83 @@ local class = UnitClass("player");
 		-- SHAMAN
 		---------------------------
 		if (class == 'Shaman') then
-			if (partyMember ~= nil and partyMember ~= 0 and partyMember:GetDistance() < 50) then
-			
-							-- Revive
-							if (not IsInCombat() and partyMember:IsDead() and HasSpell("Ancestral Spirit") and sig_scripts:isAreaNearTargetSafe(partyMember)) then
-								if (script_follow:moveInLineOfSight(partyMember)) then 
-									return true; 
-								end
-								if (Cast('Ancestral Spirit', partyMember)) then
-									script_follow.waitTimer = GetTimeEX() + 1500;
-									sig_scripts.message = "Casting Ancestral Spirit on " .. partyMember:GetUnitName();
-									return true;
-								end
-							end
+			if (leaderobject ~= nil and partyMember ~= nil and partyMember ~= 0 and partyMember:GetDistance() < 50) then
+					--*****************
+					-- Out Of Combat --
+					--*****************
+					-- Revive
+					if (not IsInCombat() and partyMember:IsDead() and HasSpell("Ancestral Spirit") and sig_scripts:isAreaNearTargetSafe(partyMember)) then
+						if (script_follow:moveInLineOfSight(partyMember)) then 
+							return true; 
+						end
+						if (Cast('Ancestral Spirit', partyMember)) then
+							script_follow.waitTimer = GetTimeEX() + 1500;
+							sig_scripts.message = "Casting Ancestral Spirit on " .. partyMember:GetUnitName();
+							return true;
+						end
+					end
 				
 				if (partyMembersHP > 0 and partyMembersHP < 99 and localMana > 5 and not partyMember:IsDead()) then -- and partyMember:GetGUID() == script_follow.ptLeader:GetGUID()
-								
-								-- Lesser Heal
-								if (manaValor >= 99 and partyMembersHP < 40 and HasSpell("Lesser Healing Wave")) then
-									-- Move in line of sight and in range of the party member
-									if (IsCasting()) then
-										SpellStopCasting();
-									end	
-									if (script_follow:moveInLineOfSight(partyMember)) then 
-										return true; 
-									end
-									if (Cast('Lesser Healing Wave', partyMember)) then
-										script_follow.waitTimer = GetTimeEX() + 2500;
-										return true;
-									end
-								end
-								
-								-- Heal
-								if (manaValor >= 147 and partyMembersHP < 75 and HasSpell("Healing Wave")) then
-									-- Move in line of sight and in range of the party member
-									if (script_follow:moveInLineOfSight(partyMember)) then 
-										return true; 
-									end
-									if (Cast('Healing Wave', partyMember)) then
-										script_follow.waitTimer = GetTimeEX() + 3000;
-										return true;
-									end
-								--[[
-								elseif (localMana >= 76 and partyMembersHP < 70 and HasSpell("Healing Wave")) then
-									-- Move in line of sight and in range of the party member
-									if (script_follow:moveInLineOfSight(partyMember)) then 
-										return true; 
-									end
-									TargetByName(partyMember:GetUnitName());
-									CastSpellByName("Healing Wave(Rank 3)");
-									sig_scripts.message = "Casting Healing Wave(Rank 3) on " .. partyMember:GetUnitName();
-									script_follow.waitTimer = GetTimeEX() + 2500;
-									return true;
-								
-								elseif (localMana >= 42 and partyMembersHP < 80 and HasSpell("Healing Wave")) then
-									-- Move in line of sight and in range of the party member
-									if (script_follow:moveInLineOfSight(partyMember)) then 
-										return true; 
-									end
-									TargetByName(partyMember:GetUnitName());
-									CastSpellByName("Healing Wave(Rank 2)");
-									sig_scripts.message = "Casting Healing Wave(Rank 2) on " .. partyMember:GetUnitName();
-									script_follow.waitTimer = GetTimeEX() + 1500;
-									return true;
-									]]--
-								end
-					--[[
-					-- Heal Self
-					if (localHath < 80 and HasSpell("Healing Wave") and  partyMember:GetGUID() == GetLocalPlayer():GetGUID()) then
-						if (not partyMember:IsSpellInRange('Healing Wave')) then
-							if (script_follow:moveInLineOfSight(partyMember)) then 
-								script_follow.waitTimer = GetTimeEX() + 1500;
-								return true; 
-							end
+					
+					--*****************			
+					-- Leader heals --
+					--*****************
+					-- Lesser Heal
+					if (manaValor >= 99 and leaderobject:GetHealthPercentage() <= 30 and HasSpell("Lesser Healing Wave")) then
+						-- Move in line of sight and in range of the party member
+						if (IsCasting()) then
+							SpellStopCasting();
+						end	
+						if (script_follow:moveInLineOfSight(leaderobject)) then 
+							return true; 
 						end
-						if (Cast('Healing Wave', partyMember)) then
-							sig_scripts.message = "Casting Healing Wave on " .. partyMember:GetUnitName();
+						if (Cast('Lesser Healing Wave', leaderobject)) then
 							script_follow.waitTimer = GetTimeEX() + 2500;
 							return true;
 						end
 					end
 					
-					
-					-- Heal Wave max level
-					if (localMana > 5 and partyMembersHP < 60 and HasSpell("Healing Wave") and not partyMember:IsDead() and partyMember:GetGUID() == script_follow.ptLeader:GetGUID()) then
-						if (not partyMember:IsSpellInRange('Healing Wave')) then
-							if (script_follow:moveInLineOfSight(partyMember)) then 
-								script_follow.waitTimer = GetTimeEX() + 1500;
-								return true; 
-							end
+					-- Heal
+					if (manaValor >= 147 and leaderobject:GetHealthPercentage() <= 80 and HasSpell("Healing Wave")) then
+						-- Move in line of sight and in range of the party member
+						if (script_follow:moveInLineOfSight(leaderobject)) then 
+							return true; 
 						end
-						if (Cast('Healing Wave', partyMember)) then
-							sig_scripts.message = "Casting Healing Wave on " .. partyMember:GetUnitName();
-							script_follow.waitTimer = GetTimeEX() + 2500;
+						if (Cast('Healing Wave', leaderobject)) then
+							script_follow.waitTimer = GetTimeEX() + 3000;
 							return true;
 						end
-					end
+					end	
 					
-					-- Try Heal with Lesser healing wave max  else Use Ranked Healing Wave
-					if (localMana > 5 and partyMembersHP < 85 and HasSpell("Lesser Healing Wave") and not partyMember:IsDead() and partyMember:GetGUID() == script_follow.ptLeader:GetGUID()) then
-						if (not partyMember:IsSpellInRange('Lesser Healing Wave')) then
-							if (script_follow:moveInLineOfSight(partyMember)) then 
-								script_follow.waitTimer = GetTimeEX() + 1500;
-								return true; 
-							end
+					--****************************
+					-- Other party mebers heals --
+					--****************************
+					-- Lesser Heal
+					if (manaValor >= 99 and partyMembersHP < 40 and HasSpell("Lesser Healing Wave") and leaderobject:GetHealthPercentage() > 50) then
+						-- Move in line of sight and in range of the party member
+						if (IsCasting()) then
+							SpellStopCasting();
+						end	
+						if (script_follow:moveInLineOfSight(partyMember)) then 
+							return true; 
 						end
 						if (Cast('Lesser Healing Wave', partyMember)) then
-							sig_scripts.message = "Casting Lesser Healing Wave on " .. partyMember:GetUnitName();
 							script_follow.waitTimer = GetTimeEX() + 2500;
 							return true;
 						end
-					else 
-						if (localMana > 5 and partyMembersHP < 85 and HasSpell("Healing Wave") and not partyMember:IsDead() and partyMember:GetGUID() == script_follow.ptLeader:GetGUID()) then
-							if (not partyMember:IsSpellInRange('Healing Wave')) then
-								if (script_follow:moveInLineOfSight(partyMember)) then 
-									script_follow.waitTimer = GetTimeEX() + 1500;
-									return true; 
-								end
-							else 
-								TargetByName(partyMember:GetUnitName());
-								CastSpellByName("Healing Wave(Rank 2)");
-								sig_scripts.message = "Casting Healing Wave(Rank 2) on " .. partyMember:GetUnitName();
-								script_follow.waitTimer = GetTimeEX() + 2500;
-								return true;
-							end
-						end
 					end
 					
-					-- Out of combat
-					if (localMana > 5 and partyMembersHP < 85 and HasSpell("Lesser Healing Wave") and not IsInCombat()) then
-						if (not partyMember:IsSpellInRange('Lesser Healing Wave')) then
-							if (script_follow:moveInLineOfSight(partyMember)) then 
-								script_follow.waitTimer = GetTimeEX() + 1500;
-								return true; 
-							end
-						end
-						if (Cast('Lesser Healing Wave', partyMember)) then
-							sig_scripts.message = "Casting Lesser Healing Wave) on " .. partyMember:GetUnitName();
-							script_follow.waitTimer = GetTimeEX() + 2500;
-							return true;
-						end
-					else 
-						if (localMana > 5 and partyMembersHP < 85 and HasSpell("Healing Wave") and not IsInCombat()) then
-							if (not partyMember:IsSpellInRange('Healing Wave')) then
-								if (script_follow:moveInLineOfSight(partyMember)) then 
-									script_follow.waitTimer = GetTimeEX() + 1500;
-									return true; 
-								end
-							else 
-								TargetByName(partyMember:GetUnitName());
-								CastSpellByName("Healing Wave(Rank 2)");
-								script_follow.waitTimer = GetTimeEX() + 2500
-								sig_scripts.message = "Casting Healing Wave(Rank 2) on " .. partyMember:GetUnitName();
-								return true;
-							end
-						end
-					end
-					
-					if (localMana > 5 and partyMembersHP < 60 and HasSpell("Healing Wave") and not IsInCombat()) then
-						if (not partyMember:IsSpellInRange('Healing Wave')) then
-							if (script_follow:moveInLineOfSight(partyMember)) then 
-								script_follow.waitTimer = GetTimeEX() + 1500;
-								return true; 
-							end
+					-- Heal
+					if (manaValor >= 147 and partyMembersHP < 80 and HasSpell("Healing Wave") and leaderobject:GetHealthPercentage() > 60) then
+						-- Move in line of sight and in range of the party member
+						if (script_follow:moveInLineOfSight(partyMember)) then 
+							return true; 
 						end
 						if (Cast('Healing Wave', partyMember)) then
-							sig_scripts.message = "Casting Healing Wave) on " .. partyMember:GetUnitName();
-							script_follow.waitTimer = GetTimeEX() + 2500;
+							script_follow.waitTimer = GetTimeEX() + 3000;
 							return true;
 						end
 					end
-					]]--
 				end
 			end 
 		end -- Shaman
@@ -385,6 +311,39 @@ local class = UnitClass("player");
 
 	return false;	
 		
+end
+
+function sig_helper:classSpecifics()
+	local class = UnitClass("player");
+	
+	if (class == 'Shaman') then
+		local emcombat = sig_scripts:searchingTarget(100);
+		if (emcombat ~= nil and emcombat ~= 0) then
+			local x, y, z = emcombat:GetPosition();
+			
+			if (emcombat:GetDistance() > 20) then
+				script_follow:moveToTarget(GetLocalPlayer(),x,y,z);
+				return true;
+			else
+				if (IsMoving()) then StopMoving(); end
+			end
+			emcombat:FaceTarget();
+			-- Totem 2
+			if (HasSpell(script_shaman.totem2) and not localObj:HasBuff(script_shaman.totemBuff2)) then
+				CastSpellByName(script_shaman.totem2);
+				-- script_shaman.waitTimer = GetTimeEX() + 1500;
+			end
+			
+			-- Totem 1
+			if (HasSpell(script_shaman.totem) and not localObj:HasBuff(script_shaman.totemBuff)) then
+				CastSpellByName(script_shaman.totem);
+				-- script_shaman.waitTimer = GetTimeEX() + 1500;
+			end
+			return true;
+		end
+	end	
+	
+	return false;
 end
 
 function sig_helper:HealsAndBuffsPets()
