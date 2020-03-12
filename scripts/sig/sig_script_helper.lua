@@ -228,7 +228,7 @@ local class = UnitClass("player");
 						end
 					end
 					
-					-- Heal
+					-- Heal 70%
 					if (manaValor >= 147 and leaderobject:GetHealthPercentage() <= 80 and HasSpell("Healing Wave")) then
 						-- Move in line of sight and in range of the party member
 						if (script_follow:moveInLineOfSight(leaderobject)) then 
@@ -239,6 +239,20 @@ local class = UnitClass("player");
 							return true;
 						end
 					end	
+					--[[
+					-- Heal
+					if (manaValor >= 147 and leaderobject:GetHealthPercentage() <= 90 and HasSpell("Healing Wave")) then
+						-- Move in line of sight and in range of the party member
+						if (script_follow:moveInLineOfSight(leaderobject)) then 
+							return true; 
+						end
+						CastSpellByName("Healing Wave(Rank 4)");
+						script_follow.waitTimer = GetTimeEX() + 3000;
+						return true;
+					end	
+					]]--
+					
+					
 					
 					--****************************
 					-- Other party mebers heals --
@@ -311,39 +325,6 @@ local class = UnitClass("player");
 
 	return false;	
 		
-end
-
-function sig_helper:classSpecifics()
-	local class = UnitClass("player");
-	
-	if (class == 'Shaman') then
-		local emcombat = sig_scripts:searchingTarget(100);
-		if (emcombat ~= nil and emcombat ~= 0) then
-			local x, y, z = emcombat:GetPosition();
-			
-			if (emcombat:GetDistance() > 20) then
-				script_follow:moveToTarget(GetLocalPlayer(),x,y,z);
-				return true;
-			else
-				if (IsMoving()) then StopMoving(); end
-			end
-			emcombat:FaceTarget();
-			-- Totem 2
-			if (HasSpell(script_shaman.totem2) and not localObj:HasBuff(script_shaman.totemBuff2)) then
-				CastSpellByName(script_shaman.totem2);
-				-- script_shaman.waitTimer = GetTimeEX() + 1500;
-			end
-			
-			-- Totem 1
-			if (HasSpell(script_shaman.totem) and not localObj:HasBuff(script_shaman.totemBuff)) then
-				CastSpellByName(script_shaman.totem);
-				-- script_shaman.waitTimer = GetTimeEX() + 1500;
-			end
-			return true;
-		end
-	end	
-	
-	return false;
 end
 
 function sig_helper:HealsAndBuffsPets()

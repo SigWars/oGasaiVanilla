@@ -1,5 +1,5 @@
 script_follow = {
-	squadmode = true,
+	squadmode = false,
 	jump = false,
 	useMount = false,
 	disMountRange = 32,
@@ -30,10 +30,11 @@ script_follow = {
 	gatherLoaded = include("scripts\\script_gather.lua"),
 	talentLoaded = include("scripts\\script_talent.lua"),
 	sigScriptHelper = include("scripts\\sig\\sig_script_helper.lua"),
+	sigSpecifics = include("scripts\\sig\\sig_class_especifics.lua"),
 	enableGather = false,
-	gatherForQuest = true,
+	gatherForQuest = false,
 	gatherQuestDistance = 40,
-	QuestObjectName1 = 'Sack of Meat',
+	QuestObjectName1 = 'Demon Portal',
 	QuestObjectName2 = 'Rocket Car Rubble',
 	QuestObjectName3 = 'Number',
 	useQuestItem = false,
@@ -335,15 +336,15 @@ function script_follow:moveToTarget(objeto,x,y,z)
 end
 
 function script_follow:IsNearElevator()
-	local objList = { "eleva", "brid"};
+	local objList = {"eleva", "brid", "upperldoor", "booty bay ship", "maiden's fancy"};
 	local targetObj, targetType = GetFirstObject();
 	while targetObj ~= 0 do
 		if (targetType == 5) then -- GameObject
-			if (targetObj:GetDistance() < 50) then
+			if (targetObj:GetDistance() < 100) then
 				for _,objeto in pairs(objList) do
-					-- sig_scripts.message = targetObj:GetUnitName();
+					sig_scripts.message = targetObj:GetUnitName() .. " With string " .. objeto .. " At: " .. math.floor(targetObj:GetDistance()) .. " Yrds: ";
 					if(string.find(string.lower(targetObj:GetUnitName()),objeto)) then
-						sig_scripts.message = targetObj:GetUnitName() .. " With string " .. objeto .. " At: " .. math.floor(targetObj:GetDistance()) .. " Yrds: ";
+						-- sig_scripts.message = targetObj:GetUnitName() .. " With string " .. objeto .. " At: " .. math.floor(targetObj:GetDistance()) .. " Yrds: ";
 						return true;
 					end
 				end
@@ -362,7 +363,7 @@ function script_follow:IsNearElevbyID()
 		 if (targetType == 5) then -- GameObject
 			local x, y, z = targetObj:GetObjectPosition();
 			if (targetObj:GetDistance() < 100) then
-				sig_scripts.message = targetObj:GetObjectDisplayID() .. " At: " ..math.floor(x).. " " ..math.floor(y).. " "..math.floor(z).. " "..targetObj:GetUnitName().. " State:"..targetObj:GetObjectState();
+				-- sig_scripts.message = targetObj:GetObjectDisplayID() .. " At: " ..math.floor(x).. " " ..math.floor(y).. " "..math.floor(z).. " "..targetObj:GetUnitName().. " State:"..targetObj:GetObjectState();
 				if (targetObj:GetObjectDisplayID() == 7051) then
 					-- sig_scripts.message = targetObj:GetObjectDisplayID() .. " At: " .. targetObj:GetObjectPosition();
 					return true;
@@ -666,7 +667,7 @@ function script_follow:run()
 			return;
 		end
 		
-		if (sig_helper:classSpecifics()) then
+		if (sig_class_especifics:classSpecifics()) then
 			self.message = "Class especific action ";
 			return;
 		end
@@ -919,9 +920,13 @@ function script_follow:run()
 			end
 		end
 		
-		local isTaunting = sig_scripts:tauntInhealer();
-		if (HasSpell('Defensive Stance') and isTaunting ~= nil) then
-			self.enemyObj = isTaunting;
+		if (HasSpell('Defensive Stance')) then
+			if (sig_scripts.usemockingblow or sig_scripts.usetaunt) then
+				local isTaunting = sig_scripts:tauntInhealer();
+				if (isTaunting ~= nil) then
+					self.enemyObj = isTaunting;
+				end
+			end	
 		end
 		
 		----------------------------------------------------------

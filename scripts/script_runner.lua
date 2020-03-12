@@ -457,6 +457,10 @@ function script_runner:run()
 				target = nil;
 			end
 		end
+		
+		if (self.ignoreCombat) then
+			target = nil;
+		end
 			
 		
 		

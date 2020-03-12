@@ -45,11 +45,14 @@ function script_shaman:setup()
 	elseif (HasSpell('Mana Spring Totem') and HasItem('Water Totem')) then
 		self.totem2 = 'Mana Spring Totem';
 		self.totemBuff2 = 'Mana Spring';
-	
 	end
 	
+	-- Set totem 3
+	if (HasSpell('Windfury Totem') and HasItem('Air Totem')) then	
+		self.totem3 = 'Windfury Totem';
+		self.totemBuff3 = 'Windfury Totem';
+	end
 	
-
 	-- Set healing spell
 	if (HasSpell('Lesser Healing Wave')) then
 		self.healingSpell = 'Lesser Healing Wave';
@@ -333,6 +336,7 @@ function script_shaman:run(targetGUID)
 			if (targetObj:GetDistance() < self.meeleDistance) then
 				targetObj:FaceTarget();
 
+				
 				-- Totem 2
 				if (HasSpell(self.totem2) and not localObj:HasBuff(self.totemBuff2)) then
 					CastSpellByName(self.totem2);
@@ -344,6 +348,7 @@ function script_shaman:run(targetGUID)
 					CastSpellByName(self.totem);
 					-- self.waitTimer = GetTimeEX() + 1500;
 				end
+				
 			
 				if (GetNumPartyMembers() == 0) then
 					-- Stormstrike
@@ -353,6 +358,7 @@ function script_shaman:run(targetGUID)
 						end
 					end
 				end
+				
 			end
 
 			return 0;

@@ -211,7 +211,7 @@ function script_warrior:run(targetGUID)
 			self.message = "Pulling " .. targetObj:GetUnitName() .. "...";
 			
 			-- Maintain Satance seted for combat
-			if (not localObj:HasBuff(self.combatStance)) then CastSpellByName(self.combatStance); end
+			--if (not localObj:HasBuff(self.combatStance)) then CastSpellByName(self.combatStance); end
 			
 			-- Check: Open with throw weapon
 			if (self.rangeOpener and not sig_scripts.rotationRunning) then
@@ -249,7 +249,17 @@ function script_warrior:run(targetGUID)
 			if (IsMounted()) then DisMount(); end
 			
 			-- Maintain Satance seted for combat
-			if (not localObj:HasBuff(self.combatStance)) then CastSpellByName(self.combatStance); end
+			if (targetObj:GetCreatureType() ~= 'Mechanical' and targetObj:GetCreatureType() ~= 'Elemental') then
+				if (sig_globalVars:getCombatTime() > 5000 or targetObj:HasDebuff('Rend')) then 
+					if (not localObj:HasBuff(self.combatStance)) then
+						CastSpellByName(self.combatStance);
+					end
+				end
+			else
+				if (not localObj:HasBuff(self.combatStance)) then
+					CastSpellByName(self.combatStance);
+				end
+			end
 			
 			-- Run backwards if we are too close to the target
 			if (targetObj:GetDistance() < 0.5 and not sig_scripts.rotationRunning) then 
@@ -350,13 +360,6 @@ function script_warrior:run(targetGUID)
 
 				end
 				
-				if (not self.defensiveMode) then
-					-- Meele Skill: Overpower if possible
-					if (script_warrior:canOverpower() and localRage >= 5 and not IsSpellOnCD('Overpower')) then 
-						CastSpellByName('Overpower'); 
-					end
-				end
-
 				-- Meele skill Execute the target if possible
 				if (not self.defensiveMode and targetHealth <= 20 and HasSpell('Execute')) then 
 					if (Cast('Execute', targetObj)) then 
@@ -364,6 +367,19 @@ function script_warrior:run(targetGUID)
 					else 
 						return 0; -- save rage for execute
 					end 
+				end 
+				
+				-- Meele Skill: Overpower if possible
+				if (not self.defensiveMode) then
+					if (script_warrior:canOverpower() and localRage >= 5 and not IsSpellOnCD('Overpower')) then 
+						CastSpellByName('Overpower'); 
+					end
+				end
+				
+				-- Meele Skill: Rend if we got more than 10 rage
+				if (targetObj:GetCreatureType() ~= 'Mechanical' and targetObj:GetCreatureType() ~= 'Elemental' and HasSpell('Rend') and not targetObj:HasDebuff("Rend") 
+					and targetHealth > 30 and localRage >= 10) then 
+					if (Cast('Rend', targetObj)) then return 0; end 
 				end 
 
 				-- Meele skill: Bloodthirst, save rage for this attack
@@ -378,12 +394,6 @@ function script_warrior:run(targetGUID)
 				-- Humanoid use to flee, keep Hamstring up on them
 				if (not self.defensiveMode and targetObj:GetCreatureType() == 'Humanoid' and localRage >= 10 and targetHealth < 30 and not targetObj:HasDebuff('Hamstring')) then 
 					if (Cast('Hamstring', targetObj)) then return 0; end 
-				end 
-
-				-- Meele Skill: Rend if we got more than 10 rage
-				if (targetObj:GetCreatureType() ~= 'Mechanical' and targetObj:GetCreatureType() ~= 'Elemental' and HasSpell('Rend') and not targetObj:HasDebuff("Rend") 
-					and targetHealth > 30 and localRage >= 10) then 
-					if (Cast('Rend', targetObj)) then return 0; end 
 				end 
 
 				-- Meele Skill: Heroic Strike if we got 15 rage

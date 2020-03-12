@@ -19,7 +19,7 @@ function sig_scripts:tauntInhealer()
 	-- Taunt by SigWar
 	------------------------
 	local needTaunt = sig_scripts:isAttakingHealer(); -- Returne object is attacking healer by name in script_follow
-	if (needTaunt ~= nil and needTaunt ~= 0) then
+	if (needTaunt ~= nil and needTaunt ~= 0 and not GetLocalPlayer():IsMovementDisabed()) then
 		
 		local needTauntGuid = needTaunt:GetGUID();
 		
